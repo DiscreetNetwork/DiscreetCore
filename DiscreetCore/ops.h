@@ -11,6 +11,7 @@ extern "C" {
 #include "crypto_curve.h"
 }
 
+#include "export.h"
 #include "types.h"
 
 namespace discore {
@@ -62,7 +63,7 @@ namespace discore {
     bool topoint_check_order(ge_p3 *p, const unsigned char *data);
 
     key skgen();
-    void skgen(key &);
+    EXPORT void skgen(key &);
     keyV skvgen(size_t r);
     key pkgen();
     void skpkgen(key &sk, key &pk);

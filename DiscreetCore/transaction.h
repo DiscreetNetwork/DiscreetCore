@@ -54,6 +54,7 @@ namespace discore {
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 EXPORT void DKSAP(discore::key &R, discore::key &T, const discore::key &pv, const discore::key &ps);
 EXPORT void DKSAPRecover(discore::key &t, const discore::key &R, const discore::key &sv, const discore::key &ss);
 EXPORT discore::key GenerateSeckey1();
@@ -62,7 +63,7 @@ EXPORT discore::key GeneratePubkey();
 EXPORT void GenerateKeypair(discore::key &sk, discore::key &pk);
 EXPORT void ScalarmultBase(discore::key &ag, const discore::key &a);
 EXPORT discore::key ScalarmultBase1(const discore::key &a);
-EXPORT void GemCommitment(discore::key &c, const discore::key &a, discore::dis_amount amount);
+EXPORT void GenCommitment(discore::key &c, const discore::key &a, discore::dis_amount amount);
 EXPORT discore::key Commit(discore::dis_amount amount, const discore::key &mask);
 EXPORT discore::key CommitToZero(discore::dis_amount amount);
 EXPORT discore::dis_amount RandomDisAmount(discore::dis_amount limit);

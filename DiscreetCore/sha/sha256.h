@@ -12,6 +12,8 @@
 
 #include <stdint.h>
 
+#include "export.h"
+
 /* CONSTANTS */
 #define SHA256_BLOCK_SIZE 64            // SHA256 uses a 64 byte block
 #define SHA256_DIGEST_SIZE 32           // SHA256 uses 32 bytes for digest
@@ -46,10 +48,10 @@ typedef struct {
 } sha256_api;
 
 /* generic algorithm is automatically provided */
-int sha256_init(sha256_ctx *state);
-int sha256_update(sha256_ctx *state, const unsigned char *in, unsigned long long inlen);
-int sha256_final(sha256_ctx *state, unsigned char *out);
-int sha256(unsigned char *out, const unsigned char *in, unsigned long long len);
+EXPORT int sha256_init(sha256_ctx *state);
+EXPORT int sha256_update(sha256_ctx *state, const unsigned char *in, unsigned long long inlen);
+EXPORT int sha256_final(sha256_ctx *state, unsigned char *out);
+EXPORT int sha256(unsigned char *out, const unsigned char *in, unsigned long long len);
 
 #ifdef __cplusplus
 }

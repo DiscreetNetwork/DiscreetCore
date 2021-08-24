@@ -12,6 +12,7 @@ extern "C" {
 #include "sc_reduce32copy.h"
 #include "sha/sha256.h"
 #include "export.h"
+#include "crypto.h"
 }
 
 struct zero_commitment {
@@ -563,4 +564,21 @@ void ECDHDecode(ecdhtuple &masked, const key &secret, bool v2)
         sc_sub(masked.mask.bytes, masked.mask.bytes, secret1.bytes);
         sc_sub(masked.amount.bytes, masked.amount.bytes, secret2.bytes);
     }
+}
+
+void SchnorrSign(key &s, key &e, const key &p, const key &x, const key &m)
+{
+    unsigned char buf[64];
+    generate_signature(m.bytes, p.bytes, x.bytes, buf);
+    memcpy(e.bytes, buf, 32);
+    memcpy(s.bytes, buf + 32, 32);
+}
+
+bool SchnorrVerify(key &s, key &e, const key &p, const key &m) 
+{
+    unsigned char buf[64];
+    memcpy(buf, e.bytes, 32);
+    memcpy(buf + 32, s.bytes, 32);
+
+    return check_signature(m.bytes, p.bytes, buf);
 }

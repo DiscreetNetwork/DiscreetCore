@@ -16,6 +16,11 @@
 #endif
 
 namespace discore {
+    struct SchnorrSig {
+        key s;
+        key e;
+    };
+
     struct tx_input {
         key C; /* commitment */
         key T; /* UTXO pubkey */
@@ -96,7 +101,8 @@ EXPORT void HashToP3(ge_p3 &hash8_p3, const discore::key &k);
 EXPORT discore::key GenCommitmentMask(const discore::key &sk);
 EXPORT void ECDHEncode(discore::ecdhtuple &unmasked, const discore::key &secret, bool v2);
 EXPORT void ECDHDecode(discore::ecdhtuple &masked, const discore::key &secret, bool v2);
-
+EXPORT void SchnorrSign(discore::key& s, discore::key& e, const discore::key& p, const discore::key& x, const discore::key& m);
+EXPORT bool SchnorrVerify(discore::key& s, discore::key& e, const discore::key& p, const discore::key& m);
 
 #ifdef __cplusplus
 }

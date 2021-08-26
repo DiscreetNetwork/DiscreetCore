@@ -7,12 +7,13 @@
 #include "bulletproof.h"
 #include "transaction.h"
 
+#include "crypto.h"
+
 extern "C" {
 #include "crypto_curve.h"
 #include "sc_reduce32copy.h"
 #include "sha/sha256.h"
 #include "export.h"
-#include "crypto.h"
 }
 
 struct zero_commitment {

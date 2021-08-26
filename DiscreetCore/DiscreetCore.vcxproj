@@ -72,6 +72,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -91,13 +92,15 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)\DiscreetCore</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>C:\Program Files\boost\boost_1_77_0;$(SolutionDir)\DiscreetCore</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
+      <AdditionalLibraryDirectories>C:\Program Files\boost\boost_1_77_0\lib32-msvc-14.2;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -191,7 +194,7 @@
     <ClCompile Include="src\core\sc_reduce32copy.c" />
     <ClCompile Include="src\core\transaction.cpp" />
     <ClCompile Include="src\core\types.cpp" />
-    <ClCompile Include="src\crypto\crypto.c" />
+    <ClCompile Include="src\crypto\crypto.cpp" />
     <ClCompile Include="src\crypto\crypto_curve.c" />
     <ClCompile Include="src\crypto\crypto_data.c" />
     <ClCompile Include="src\crypto\hmac\hmacsha256.c" />
@@ -203,7 +206,7 @@
     <ClCompile Include="src\crypto\ripemd160\ripemd160.c" />
     <ClCompile Include="src\crypto\sha\sha256.c" />
     <ClCompile Include="src\crypto\sha\sha512.c" />
-    <ClCompile Include="src\crypto\test.c" />
+    <ClCompile Include="src\crypto\test.cpp" />
     <ClCompile Include="src\crypto\verify.c" />
     <ClCompile Include="src\util\aligned.c" />
     <ClCompile Include="src\util\memwipe.c" />

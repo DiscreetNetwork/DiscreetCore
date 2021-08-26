@@ -7,9 +7,10 @@
 #include <tuple>
 #include <vector>
 
+#include "crypto.h"
+
 extern "C" {
 #include "crypto_curve.h"
-#include "crypto.h"
 }
 
 #include "ops.h"

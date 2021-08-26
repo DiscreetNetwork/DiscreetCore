@@ -6,8 +6,9 @@
 #include <cstring>
 #include <tuple>
 
-extern "C" {
 #include "crypto.h"
+
+extern "C" {
 #include "crypto_curve.h"
 }
 

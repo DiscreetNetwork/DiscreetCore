@@ -2,11 +2,14 @@
 #include <string.h>
 #include <stdbool.h>
 #include "crypto.h"
-#include "crypto_curve.h"
 
-void print32(char * const msg, unsigned char *buf)
+extern "C" {
+#include "crypto_curve.h"
+}
+
+void print32(const char * const msg, unsigned char *buf)
 {
-    char *conv__ = "0123456789ABCDEF";
+    const char *conv__ = "0123456789ABCDEF";
     char printable[65] = {0};
     int i;
 

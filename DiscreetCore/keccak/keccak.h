@@ -21,6 +21,10 @@
     }; \
     keccakf(st, KECCAK_ROUNDS); }
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct keccak_ctx {
     uint64_t st[25]; //1600 bits hashstate
     uint64_t msg[17]; //1088 bits buffer (136 for 256 bit hash)
@@ -35,5 +39,9 @@ EXPORT void keccak1600(const uint8_t *in, size_t inlen, uint8_t *md);
 EXPORT void keccak_init(keccak_ctx *ctx);
 EXPORT void keccak_update(keccak_ctx *ctx, const unsigned char *in, unsigned int inlen);
 EXPORT void keccak_final(keccak_ctx *ctx, unsigned char *digest);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // KECCAK_H

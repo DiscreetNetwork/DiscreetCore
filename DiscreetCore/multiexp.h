@@ -6,9 +6,8 @@
 #include <vector>
 #include "types.h"
 
-extern "C" {
 #include "crypto.h"
-}
+
 
 namespace discore {
     struct multiexp_data {

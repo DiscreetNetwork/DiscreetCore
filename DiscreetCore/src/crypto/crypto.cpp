@@ -4,37 +4,44 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "random/random.h"
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/lock_guard.hpp>
 
 #if !defined(_WIN32)
 #include "random/xoroshiro.h"
 #endif
 
+extern "C" {
+#include "random/random.h"
 #include "sha/sha256.h"
 #include "crypto_curve.h"
+}
+
 #include "crypto.h"
 
 const pubkey null_pubkey = {0};
 const seckey null_seckey = {0};
 
-void hash_op(const void *data, size_t length, unsigned char *hash)
+void hash_op(const void *data, unsigned int length, unsigned char *hash)
 {
     sha256(hash, (const unsigned char*)data, length);
 }
 
 /* NOTE: random function here is not thread safe. */
-void generate_random_bytes_UNSAFE(uint8_t *bytes, size_t n)
+void generate_random_bytes_UNSAFE(uint8_t *bytes, unsigned int n)
 {
     generate_randombytes(n, bytes);
 }
 
-void generate_random_bytes_thread_safe(uint8_t *bytes, size_t n)
+boost::mutex& get_random_lock() {
+    static boost::mutex random_lock;
+    return random_lock;
+}
+
+void generate_random_bytes_thread_safe(uint8_t *bytes, unsigned int n)
 {
-#if !defined(_WIN32)
-    generate_random_bytes_xoroshiro(n, bytes);
-#else
+    boost::lock_guard<boost::mutex> lock(get_random_lock());
     generate_randombytes(n, bytes);
-#endif
 }
 
 static inline bool less32(const uint8_t *a, const uint8_t *b)
@@ -56,7 +63,7 @@ void random32(unsigned char *bytes)
     static const unsigned char limit[32] = { 0xe3, 0x6a, 0x67, 0x72, 0x8b, 0xce, 0x13, 0x29, 0x8f, 0x30, 0x82, 0x8c, 0x0b, 0xa4, 0x10, 0x39, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xf0 };
 
     for(;;) {
-        generate_random_bytes_UNSAFE(bytes, 32);
+        generate_random_bytes_thread_safe(bytes, 32);
 
         if (!less32(bytes, limit))
             continue;
@@ -72,7 +79,7 @@ static inline void sc_random(curve_scalar result)
     random32(result);
 }
 
-void hash_to_scalar(const void *data, size_t length, curve_scalar result)
+void hash_to_scalar(const void *data, unsigned int length, curve_scalar result)
 {
     hash_op(data, length, result);
     sc_reduce32(result);

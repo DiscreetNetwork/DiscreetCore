@@ -2,6 +2,9 @@
 //#include <thread>
 //#include <mutex>
 
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/lock_guard.hpp>
+
 extern "C" {
 #include "crypto_curve.h"
 } 
@@ -41,9 +44,9 @@ namespace discore {
     static const keyV twoN = vector_powers(TWO, maxN);
     static const key ip12 = inner_product(oneN, twoN);
 
-#if !defined(_WIN32)
-    static std::mutex init_mutex;
-#endif
+
+    static boost::mutex init_mutex;
+
 
     static inline key multiexp(const std::vector<multiexp_data> &data, size_t HiGi_size)
     {
@@ -78,9 +81,8 @@ namespace discore {
 
     static void init_exponents()
     {
-#if !defined(_WIN32)
-        std::lock_guard<std::mutex> lock(init_mutex);
-#endif
+        boost::lock_guard<boost::mutex> lock(init_mutex);
+
         static bool init_done = false;
 
         if (init_done) {

@@ -146,7 +146,7 @@
     <ClCompile Include="src\crypto\sha\sha512.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\crypto\crypto.c">
+    <ClCompile Include="src\crypto\crypto.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\crypto\crypto_curve.c">
@@ -155,7 +155,7 @@
     <ClCompile Include="src\crypto\crypto_data.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\crypto\test.c">
+    <ClCompile Include="src\crypto\test.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\crypto\verify.c">

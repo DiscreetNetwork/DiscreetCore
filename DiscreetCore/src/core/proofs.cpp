@@ -2,6 +2,9 @@
 //#include <mutex>
 //#include <thread>
 
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/lock_guard.hpp>
+
 extern "C" {
 #include "crypto_curve.h"
 }
@@ -25,9 +28,9 @@ namespace discore {
     static ge_p3 G_p3;
     static key U;
     static ge_p3 U_p3;
-#if !defined(_WIN32)
-    static std::mutex init_mutex;
-#endif
+
+    static boost::mutex init_mutex;
+
     static const key ZERO = zero();
     static const key ONE = identity();
     static const key IDENTITY = identity();
@@ -156,9 +159,9 @@ namespace discore {
 
     static void init_gens()
     {
-#if !defined(_WIN32)
-        std::lock_guard<std::mutex> lock(init_mutex);
-#endif
+
+        boost::lock_guard<boost::mutex> lock(init_mutex);
+
         static const std::string H_salt("triptych H");
 
         static bool init_done = false;

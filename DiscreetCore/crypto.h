@@ -21,11 +21,11 @@ typedef curve_scalar seckey;
 extern const pubkey null_pubkey;
 extern const seckey null_seckey;
 
-void hash_op(const void *data, size_t length, unsigned char *hash);
-void generate_random_bytes_UNSAFE(uint8_t *bytes, size_t n);
-void generate_random_bytes_thread_safe(uint8_t *bytes, size_t n);
+void hash_op(const void *data, unsigned int length, unsigned char *hash);
+void generate_random_bytes_UNSAFE(uint8_t *bytes, unsigned int n);
+void generate_random_bytes_thread_safe(uint8_t *bytes, unsigned int n);
 void random32(unsigned char *bytes);
-void hash_to_scalar(const void *data, size_t length, curve_scalar result);
+void hash_to_scalar(const void *data, unsigned int length, curve_scalar result);
 void generate_keypair(pubkey pub, seckey sec);
 void generate_keypair_recovery(pubkey pub, seckey sec, const seckey recovery_key);
 void generate_keys(pubkey pub, seckey sec, const seckey recovery_key, bool recover);

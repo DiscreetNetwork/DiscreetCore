@@ -7,8 +7,9 @@
 #include <vector>
 #include <iostream>
 
-extern "C" {
 #include "crypto.h"
+
+extern "C" {
 #include "crypto_curve.h"
 #include "verify.h"
 }

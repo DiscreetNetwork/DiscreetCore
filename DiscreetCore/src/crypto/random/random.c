@@ -120,6 +120,7 @@ INITIALIZER(init_random) {
 void generate_randombytes(size_t n, void *res) {
     unsigned char _tmp[SHA512_DIGEST_SIZE];
     memcpy(_tmp, &state.s[0], SHA512_DIGEST_SIZE);
+    sha512_update(&state, _tmp, SHA512_DIGEST_SIZE);
     for (;;) {
         sha512_update(&state, _tmp, SHA512_DIGEST_SIZE);
         if (n <= SHA512_DIGEST_SIZE) {

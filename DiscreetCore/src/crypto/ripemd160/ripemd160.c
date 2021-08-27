@@ -266,7 +266,7 @@ static void ripemd160_compress(ripemd160_ctx *self)
     self->bufpos = 0;
 }
 
-void ripemd160_update(ripemd160_ctx *self, const unsigned char *p, unsigned long length)
+void ripemd160_update(ripemd160_ctx *self, const unsigned char *p, unsigned long long length)
 {
     unsigned long bytes_needed;
 
@@ -328,7 +328,7 @@ void ripemd160_final(ripemd160_ctx *self, unsigned char *out)
     memcpy(out, &self->h, RIPEMD160_DIGEST_SIZE);
 }
 
-void ripemd160(const void* in, unsigned long length, void* out)
+void ripemd160(const void* in, unsigned long long length, void* out)
 {
   ripemd160_ctx md;
   ripemd160_init(&md);

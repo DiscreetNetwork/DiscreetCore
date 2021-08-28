@@ -108,6 +108,17 @@ namespace discore {
         key zA, zC, z;
     };
 
+    typedef key key16[16];
+    typedef key key10[10];
+
+    struct ArgBulletproof {
+        uint64_t size;
+        key16 V;
+        key A, S, T1, T2, taux, mu;
+        key10 L, R;
+        key a, b, t;
+    };
+
     struct bulletproof {
         keyV V;
         key A, S, T1, T2;

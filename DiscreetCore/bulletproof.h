@@ -5,6 +5,8 @@
 #include <vector>
 #include "types.h"
 
+#include "export.h"
+
 /* based on cryptonote config :) */
 #define BULLETPROOF_MAX_OUTPUTS 16
 
@@ -19,5 +21,16 @@ namespace discore
     bool bulletproof_VERIFY (const std::vector<const bulletproof*> &proofs);
     bool bulletproof_VERIFY (const std::vector<bulletproof> &proofs);
 }
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+EXPORT void bulletproof_PROVE(discore::ArgBulletproof bp, const uint64_t v[16], const discore::key16 gamma, uint64_t size);
+EXPORT bool bulletproof_VERIFY(discore::ArgBulletproof bp);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // BULLETPROOF_H

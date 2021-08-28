@@ -753,6 +753,8 @@ try_again:
         size_t logM, inv_offset;
     };
 
+    
+
     bool bulletproof_VERIFY(const std::vector<const bulletproof*> &proofs)
     {
         init_exponents();
@@ -1015,4 +1017,73 @@ try_again:
         proofs.push_back(&proof);
         return bulletproof_VERIFY(proofs);
     }
+}
+
+void bulletproof_PROVE(discore::ArgBulletproof bp, const uint64_t v[16], const discore::key16 gamma, unsigned int size)
+{
+    discore::keyV gamma_(size);
+    std::vector<uint64_t> val(size);
+
+    for (unsigned int i = 0; i < size; i++) {
+        val[i] = v[i];
+        gamma_[i] = gamma[i];
+    }
+
+    discore::bulletproof bp_ = discore::bulletproof_PROVE(val, gamma_);
+
+    for (unsigned int i = 0; i < bp_.V.size(); i++) {
+        bp.V[i] = bp_.V[i];
+    }
+
+    for (unsigned int i = 0; i < bp_.L.size(); i++) {
+        bp.L[i] = bp_.L[i];
+        bp.R[i] = bp_.R[i];
+    }
+
+    bp.A = bp_.A;
+    bp.S = bp_.S;
+    bp.T1 = bp_.T1;
+    bp.T2 = bp_.T2;
+    bp.taux = bp_.taux;
+    bp.mu = bp_.mu;
+    bp.a = bp_.a;
+    bp.b = bp_.b;
+    bp.t = bp_.t;
+
+    bp.size = bp_.V.size();
+}
+
+bool bulletproof_VERIFY(discore::ArgBulletproof bp)
+{
+    discore::bulletproof bp_ = discore::bulletproof();
+
+    bp_.A = bp.A;
+    bp_.S = bp.S;
+    bp_.T1 = bp.T1;
+    bp_.T2 = bp.T2;
+    bp_.taux = bp.taux;
+    bp_.mu = bp.mu;
+
+    int size = (bp.size == 16 ? 10 : (bp.size > 7 ? 9 : (bp.size > 3 ? 8 : (bp.size == 2 ? 7 : 6))));
+
+
+    bp_.L = discore::keyV(size);
+    bp_.R = discore::keyV(size);
+
+    for (int i = 0; i < size; i++) {
+        bp_.L[i] = bp.L[i];
+        bp_.R[i] = bp.R[i];
+    }
+
+    bp_.V = discore::keyV((unsigned int)bp.size);
+
+    for (int i = 0; i < bp.size; i++) {
+        bp_.V[i] = bp.V[i];
+    }
+
+    bp_.a = bp.a;
+    bp_.b = bp.b;
+    bp_.t = bp.t;
+
+    return discore::bulletproof_VERIFY(bp_);
 }

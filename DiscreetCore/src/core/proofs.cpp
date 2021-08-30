@@ -273,8 +273,8 @@ namespace discore {
 
         //const size_t N = pow(n,m);
         const size_t N = max_mn;
-        const size_t m = 2;
-        const size_t n = 6;
+        const size_t n = 2;
+        const size_t m = 6;
 
         //CHECK_THROW_ERR(m*n <= max_mn, "Size parameters are too large!");
         CHECK_THROW_ERR(M.size() == N, "Public key vector is wrong size!");
@@ -282,7 +282,7 @@ namespace discore {
         CHECK_THROW_ERR(l < M.size(), "Signing index out of bounds!");
         CHECK_THROW_ERR(scalarmult_base(r) == M[l], "Bad signing key!");
 
-        sub_keys(temp,P[l],C_offset);
+        sub_keys(temp,P[l],C_offset); //P[l] = sG + bH, so C_offset = bH
         CHECK_THROW_ERR(scalarmult_base(s) == temp, "Bad commitment key!");
 
         init_gens();
@@ -527,12 +527,21 @@ namespace discore {
         return proof;
     }
 
+    bool triptych_verify(const keyV& M, const keyV& P, const key C_offset, triptych& proof, const key& message)
+    {
+        keyV messages(1, message);
+        keyV C_offsets(1, C_offset);
+        std::vector<triptych*> proofs(1, &proof);
+
+        return triptych_verify(M, P, C_offsets, proofs, messages);
+    }
+
     // Verify a batch of Triptych proofs with common input keys
     bool triptych_verify(const keyV &M, const keyV &P, const keyV &C_offsets, std::vector<triptych *> &proofs, const keyV &messages)
     {
         const size_t N = max_mn; // anonymity set size
-        const size_t m = 2;
-        const size_t n = 6;
+        const size_t n = 2;
+        const size_t m = 6;
 
         CHECK_THROW_ERR(M.size() == N, "Public key vector is wrong size!");
         CHECK_THROW_ERR(P.size() == N, "Commitment vector is wrong size!");
@@ -784,4 +793,78 @@ namespace discore {
 
         return true;
     }
+}
+
+void triptych_prove(discore::ArgTriptych proof, const discore::key64 M, const discore::key64 P, const discore::key C_offset, const size_t l, const discore::key r, const discore::key s, const discore::key message)
+{
+    discore::keyV argM(64);
+    discore::keyV argP(64);
+
+    for (int i = 0; i < 64; i++)
+    {
+        argM[i] = M[i];
+        argP[i] = P[i];
+    }
+
+    discore::triptych tproof = discore::triptych_prove(argM, argP, C_offset, l, r, s, message);
+
+    proof.J = tproof.J;
+    proof.K = tproof.K;
+    proof.A = tproof.A;
+    proof.B = tproof.B;
+    proof.C = tproof.C;
+    proof.D = tproof.D;
+
+    for (int i = 0; i < 6; i++)
+    {
+        proof.X[i] = tproof.X[i];
+        proof.Y[i] = tproof.Y[i];
+        proof.f[i] = tproof.f[i][0];
+    }
+
+    proof.zA = tproof.zA;
+    proof.zC = tproof.zC;
+    proof.z = tproof.z;
+}
+
+bool triptych_verify(discore::ArgTriptych proof, const discore::key64 M, const discore::key64 P, const discore::key C_offset, const size_t l, const discore::key r, const discore::key s, const discore::key message)
+{
+    discore::triptych tproof;
+
+    tproof.J = proof.J;
+    tproof.K = proof.K;
+    tproof.A = proof.A;
+    tproof.B = proof.B;
+    tproof.C = proof.C;
+    tproof.D = proof.D;
+
+    discore::keyV X(6);
+    discore::keyV Y(6);
+    discore::keyM f = discore::keyM_init(1, 6);
+
+    for (int i = 0; i < 6; i++)
+    {
+        X[i] = proof.X[i];
+        Y[i] = proof.Y[i];
+        f[0][i] = proof.f[i];
+    }
+
+    tproof.X = X;
+    tproof.Y = Y;
+    tproof.f = f;
+
+    tproof.zA = proof.zA;
+    tproof.zC = proof.zC;
+    tproof.z = proof.z;
+
+    discore::keyV argM(64);
+    discore::keyV argP(64);
+
+    for (int i = 0; i < 64; i++)
+    {
+        argM[i] = M[i];
+        argP[i] = P[i];
+    }
+
+    return discore::triptych_verify(argM, argP, C_offset, tproof, message);
 }

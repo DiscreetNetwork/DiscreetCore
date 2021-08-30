@@ -529,14 +529,12 @@ static void xor8(key &v, const key &k)
         v.bytes[i] ^= k.bytes[i];
 }
 
-key GenCommitmentMask(const key &sk)
+void GenCommitmentMask(key &rv, const key &sk)
 {
     char data[15 + sizeof(key)];
     memcpy(data, "commitment_mask", 15);
     memcpy(data + 15, &sk, sizeof(sk));
-    key rv;
     hash_to_scalar(rv, data, sizeof(data));
-    return rv;
 }
 
 void ECDHEncode(ecdhtuple &unmasked, const key &secret, bool v2)

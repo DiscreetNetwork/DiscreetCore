@@ -99,6 +99,17 @@ namespace discore {
         key64 Ci;
     };
 
+    typedef key key6[6];
+
+    struct ArgTriptych {
+        key J;
+        key K;
+        key A, B, C, D;
+        key6 X, Y;
+        key6 f;
+        key zA, zC, z;
+    };
+
     struct triptych {
         key J;
         key K;

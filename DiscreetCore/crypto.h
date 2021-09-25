@@ -2,6 +2,7 @@
 #define CRYPTO_H
 
 #include <stdint.h>
+#include "export.h"
 
 #define SIG_C(x) (&x[0])
 #define SIG_R(x) (&x[32])
@@ -21,9 +22,13 @@ typedef curve_scalar seckey;
 extern const pubkey null_pubkey;
 extern const seckey null_seckey;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void hash_op(const void *data, unsigned int length, unsigned char *hash);
 void generate_random_bytes_UNSAFE(uint8_t *bytes, unsigned int n);
-void generate_random_bytes_thread_safe(uint8_t *bytes, unsigned int n);
+EXPORT void generate_random_bytes_thread_safe(uint8_t *bytes, unsigned int n);
 void random32(unsigned char *bytes);
 void hash_to_scalar(const void *data, unsigned int length, curve_scalar result);
 void generate_keypair(pubkey pub, seckey sec);
@@ -35,4 +40,9 @@ bool secret_key_to_public_key(const seckey sec, pubkey pub);
 void generate_signature(const unsigned char *hash, const pubkey pub,
                         const seckey sec, schnorr_sig sig);
 bool check_signature(const unsigned char *hash, const pubkey pub, const schnorr_sig sig);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif // CRYPTO_H

@@ -29,7 +29,7 @@ extern "C" {
 #endif
 
 EXPORT void triptych_prove(discore::ArgTriptych proof, const discore::key64 M, const discore::key64 P, const discore::key C_offset, const size_t l, const discore::key r, const discore::key s, const discore::key message);
-EXPORT bool triptych_verify(discore::ArgTriptych proof, const discore::key64 M, const discore::key64 P, const discore::key C_offset, const size_t l, const discore::key r, const discore::key s, const discore::key message);
+EXPORT bool triptych_verify(discore::ArgTriptych proof, const discore::key64 M, const discore::key64 P, const discore::key C_offset, const discore::key message);
 
 #ifdef __cplusplus
 }

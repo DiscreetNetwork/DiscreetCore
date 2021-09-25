@@ -90,7 +90,7 @@ static void generate_system_randombytes(size_t n, void *result) {
 
 #endif
 
-static sha512_ctx state;
+static volatile sha512_ctx state;
 
 FINALIZER(deinit_random) {
   memset(&state, 0, sizeof(sha512_ctx));
@@ -118,17 +118,15 @@ INITIALIZER(init_random) {
 }
 
 void generate_randombytes(size_t n, void *res) {
-    unsigned char _tmp[SHA512_DIGEST_SIZE];
+    unsigned volatile char _tmp[SHA512_DIGEST_SIZE];
     memcpy(_tmp, &state.s[0], SHA512_DIGEST_SIZE);
     sha512_update(&state, _tmp, SHA512_DIGEST_SIZE);
     for (;;) {
+        memcpy(_tmp, &state.s[0], SHA512_DIGEST_SIZE);
+        sha512_update(&state, _tmp, SHA512_DIGEST_SIZE);
+        memcpy(_tmp, &state.s[0], SHA512_DIGEST_SIZE);
         sha512_update(&state, _tmp, SHA512_DIGEST_SIZE);
         if (n <= SHA512_DIGEST_SIZE) {
-#ifdef RDBG
-            unsigned char *_tmp2 = (unsigned char *)&state.s[0];
-            print32("state.s", _tmp2);
-            print32("state.s (2)", _tmp2 + 32);
-#endif
             memcpy(res, &state.s[0], n);
             return;
         } else {

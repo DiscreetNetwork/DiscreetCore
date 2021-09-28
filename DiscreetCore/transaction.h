@@ -60,8 +60,8 @@ namespace discore {
 extern "C" {
 #endif
 
-EXPORT void DKSAP(discore::key &R, discore::key &T, const discore::key &pv, const discore::key &ps);
-EXPORT void DKSAPRecover(discore::key &t, const discore::key &R, const discore::key &sv, const discore::key &ss);
+EXPORT void DKSAP(discore::key &R, discore::key &T, const discore::key &pv, const discore::key &ps, int index);
+EXPORT void DKSAPRecover(discore::key &t, const discore::key &R, const discore::key &sv, const discore::key &ss, int index);
 EXPORT discore::key GenerateSeckey1();
 EXPORT void GenerateSeckey(discore::key &sk);
 EXPORT discore::key GeneratePubkey();

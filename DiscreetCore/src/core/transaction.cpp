@@ -200,19 +200,45 @@ static const zero_commitment zero_commitments[] = {
 
 using namespace discore;
 
-EXPORT void DKSAP(key &R, key &T, const key &pv, const key &ps)
+EXPORT void DKSAP(key& R, key& T, const key& pv, const key& ps, int index)
 {
     key r;
     skpkgen(r, R);
 
-    key c = hash_to_scalar(scalarmult_key(pv, r));
+    key cscalar = scalarmult_key(pv, r);
+
+    unsigned char txbytes[36];
+
+    unsigned int _index = (unsigned int)index;
+
+    memcpy(txbytes, cscalar.bytes, 32);
+    txbytes[32] = (_index >> 24);
+    txbytes[33] = (_index >> 16) & 0xFF;
+    txbytes[34] = (_index >> 8) & 0xFF;
+    txbytes[35] = _index & 0xFF;
+
+    key c;
+    hash_to_scalar(c, txbytes, 36);
 
     add_keys1(T, c, ps);
 }
 
-EXPORT void DKSAPRecover(key &t, const key &R, const key &sv, const key &ss)
+EXPORT void DKSAPRecover(key &t, const key &R, const key &sv, const key &ss, int index)
 {
-    key c = hash_to_scalar(scalarmult_key(R, sv));
+    key cscalar = scalarmult_key(R, sv);
+
+    unsigned char txbytes[36];
+
+    unsigned int _index = (unsigned int)index;
+
+    memcpy(txbytes, cscalar.bytes, 32);
+    txbytes[32] = (_index >> 24);
+    txbytes[33] = (_index >> 16) & 0xFF;
+    txbytes[34] = (_index >> 8) & 0xFF;
+    txbytes[35] = _index & 0xFF;
+
+    key c;
+    hash_to_scalar(c, txbytes, 36);
 
     sc_add(t.bytes, c.bytes, ss.bytes);
 }

@@ -99,6 +99,8 @@ EXPORT discore::key HashData128(const void *data);
 EXPORT discore::key HashToScalar128(const void *data);
 EXPORT void HashToP3(ge_p3 &hash8_p3, const discore::key &k);
 EXPORT void GenCommitmentMask(discore::key &rv, const discore::key &sk);
+EXPORT void ScalarAdd(discore::key& res, discore::key& a, discore::key& b);
+EXPORT void ScalarSub(discore::key& res, discore::key& a, discore::key& b);
 EXPORT void ECDHEncode(discore::ecdhtuple &unmasked, const discore::key &secret, bool v2);
 EXPORT void ECDHDecode(discore::ecdhtuple &masked, const discore::key &secret, bool v2);
 EXPORT void SchnorrSign(discore::key& s, discore::key& e, const discore::key& p, const discore::key& x, const discore::key& m);

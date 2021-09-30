@@ -563,6 +563,16 @@ void GenCommitmentMask(key &rv, const key &sk)
     hash_to_scalar(rv, data, sizeof(data));
 }
 
+void ScalarAdd(key& res, key& a, key& b)
+{
+    sc_add(res.bytes, a.bytes, b.bytes);
+}
+
+void ScalarSub(key& res, key& a, key& b)
+{
+    sc_sub(res.bytes, a.bytes, b.bytes);
+}
+
 void ECDHEncode(ecdhtuple &unmasked, const key &secret, bool v2)
 {
     if (v2) {

@@ -1019,7 +1019,7 @@ try_again:
     }
 }
 
-void bulletproof_PROVE(discore::ArgBulletproof bp, const uint64_t v[16], const discore::key16 gamma, unsigned int size)
+void bulletproof_PROVE(discore::ArgBulletproof bp, const uint64_t v[16], const discore::key16 gamma, uint64_t size)
 {
     discore::keyV gamma_(size);
     std::vector<uint64_t> val(size);

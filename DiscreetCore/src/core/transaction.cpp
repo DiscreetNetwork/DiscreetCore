@@ -617,3 +617,17 @@ bool SchnorrVerify(key &s, key &e, const key &p, const key &m)
 
     return check_signature(m.bytes, p.bytes, buf);
 }
+
+void GenerateLinkingTag(key &r)
+{
+    static const std::string U_salt("triptych U");
+    key u_h;
+    key U;
+    ge_p3 U_p3;
+
+    hash_data(u_h, U_salt.data(), U_salt.size());
+    hash_to_p3(U_p3, u_h);
+    ge_p3_tobytes(U.bytes, &U_p3);
+
+    key J = scalarmult_key(U, scalar_invert(r));
+}

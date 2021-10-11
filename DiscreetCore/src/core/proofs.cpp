@@ -157,6 +157,11 @@ namespace discore {
         return inv;
     }
 
+    key scalar_invert(const key& x)
+    {
+        return invert(x);
+    }
+
     static void init_gens()
     {
 

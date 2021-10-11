@@ -105,6 +105,7 @@ EXPORT void ECDHEncode(discore::ecdhtuple &unmasked, const discore::key &secret,
 EXPORT void ECDHDecode(discore::ecdhtuple &masked, const discore::key &secret, bool v2);
 EXPORT void SchnorrSign(discore::key& s, discore::key& e, const discore::key& p, const discore::key& x, const discore::key& m);
 EXPORT bool SchnorrVerify(discore::key& s, discore::key& e, const discore::key& p, const discore::key& m);
+EXPORT void GenerateLinkingTag(discore::key& r);
 
 #ifdef __cplusplus
 }

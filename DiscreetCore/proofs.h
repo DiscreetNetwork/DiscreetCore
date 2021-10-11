@@ -22,6 +22,7 @@ namespace discore {
     triptych triptych_prove(const keyV &, const keyV &, const key &, const size_t, const key &, const key &, const size_t, const size_t, const key &);
     bool triptych_verify(const keyV &, const keyV &, const keyV &, std::vector<triptych *> &, const keyV &);
     bool triptych_verify(const keyV& M, const keyV& P, const key C_offset, triptych& proof, const key& message);
+    key scalar_invert(const key& x);
 }
 
 #ifdef __cplusplus

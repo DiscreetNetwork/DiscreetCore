@@ -1145,7 +1145,7 @@ bool bulletproof_plus_verify(discore::ArgBulletproofPlus bp)
     bp_.s1 = bp.s1;
     bp_.d1 = bp.d1;
 
-    int size = (bp.size == 16 ? 10 : (bp.size > 7 ? 9 : (bp.size > 3 ? 8 : (bp.size > 1 ? 7 : 6))));
+    int size = (bp.size > 8 ? 10 : (bp.size > 4 ? 9 : (bp.size > 2 ? 8 : (bp.size > 1 ? 7 : 6))));
 
     bp_.L = discore::keyV(size);
     bp_.R = discore::keyV(size);

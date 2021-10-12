@@ -8,15 +8,17 @@
 #include <iostream>
 
 #include "crypto.h"
+#include "internal_exception_debug.h"
 
 extern "C" {
 #include "crypto_curve.h"
 #include "verify.h"
 }
 
-#define CHECK_THROW_ERR(expr, msg) {if(!(expr)) {throw std::runtime_error(msg);}}
+#define CHECK_THROW_ERR(expr, msg) {if(!(expr)) {ThrowException(msg);}}
 /* we have not configured a logger yet, so assert messages are ignored */
 #define CHECK_ASSERT(expr, fail, msg) do{if(!(expr)) {return fail;};}while(0)
+//#define CHECK_ASSERT(expr, fail, msg) {if(!(expr)) {return fail;}}
 
 namespace discore {
     typedef unsigned char *Bytes;
@@ -110,7 +112,7 @@ namespace discore {
         key zA, zC, z;
     };
 
-    struct triptych {
+    struct TriptychProof {
         key J;
         key K;
         key A, B, C, D;
@@ -130,25 +132,25 @@ namespace discore {
         key a, b, t;
     };
 
-    struct bulletproof {
+    struct Bulletproof {
         keyV V;
         key A, S, T1, T2;
         key taux, mu;
         keyV L, R;
         key a, b, t;
 
-        bulletproof():
+        Bulletproof():
             A({}), S({}), T1({}), T2({}), taux({}), mu({}), a({}), b({}), t({}) {}
-        bulletproof(const key &V, const key &A, const key &S, const key &T1, const key &T2, const key &taux, const key &mu, const keyV &L, const keyV &R, const key &a, const key &b, const key &t):
+        Bulletproof(const key &V, const key &A, const key &S, const key &T1, const key &T2, const key &taux, const key &mu, const keyV &L, const keyV &R, const key &a, const key &b, const key &t):
             V({V}), A(A), S(S), T1(T1), T2(T2), taux(taux), mu(mu), L(L), R(R), a(a), b(b), t(t) {}
-        bulletproof(const keyV &V, const key &A, const key &S, const key &T1, const key &T2, const key &taux, const key &mu, const keyV &L, const keyV &R, const key &a, const key &b, const key &t):
+        Bulletproof(const keyV &V, const key &A, const key &S, const key &T1, const key &T2, const key &taux, const key &mu, const keyV &L, const keyV &R, const key &a, const key &b, const key &t):
             V(V), A(A), S(S), T1(T1), T2(T2), taux(taux), mu(mu), L(L), R(R), a(a), b(b), t(t) {}
 
-        bool operator==(const bulletproof &other) const { return V == other.V && A == other.A && S == other.S && T1 == other.T1 && T2 == other.T2 && taux == other.taux && mu == other.mu && L == other.L && R == other.R && a == other.a && b == other.b && t == other.t; }
+        bool operator==(const Bulletproof &other) const { return V == other.V && A == other.A && S == other.S && T1 == other.T1 && T2 == other.T2 && taux == other.taux && mu == other.mu && L == other.L && R == other.R && a == other.a && b == other.b && t == other.t; }
     };
 
     struct dis_sig {
-        triptych proof;
+        TriptychProof proof;
         keyV M;
         keyV P;
 

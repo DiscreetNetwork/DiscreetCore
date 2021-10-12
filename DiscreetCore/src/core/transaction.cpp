@@ -377,6 +377,18 @@ key Scalarmult81(const key &p)
     return res;
 }
 
+void scalarmult_8_correct(key& res, const key& p)
+{
+    ge_p3 p3;
+    CHECK_THROW_ERR(ge_frombytes_vartime(&p3, p.bytes) == 0, "ge_frombytes_vartime failed (scalarmult_8)");
+    ge_p2 p2;
+    ge_p3_to_p2(&p2, &p3);
+    ge_p1p1 p1;
+    ge_mul8(&p1, &p2);
+    ge_p1p1_to_p2(&p2, &p1);
+    ge_tobytes(res.bytes, &p2);
+}
+
 bool InMainSubgroup(const key &a)
 {
     ge_p3 p3;
@@ -618,7 +630,7 @@ bool SchnorrVerify(key &s, key &e, const key &p, const key &m)
     return check_signature(m.bytes, p.bytes, buf);
 }
 
-void GenerateLinkingTag(key &r)
+void GenerateLinkingTag(key &J, const key &r)
 {
     static const std::string U_salt("triptych U");
     key u_h;
@@ -629,5 +641,5 @@ void GenerateLinkingTag(key &r)
     hash_to_p3(U_p3, u_h);
     ge_p3_tobytes(U.bytes, &U_p3);
 
-    key J = scalarmult_key(U, scalar_invert(r));
+    J = scalarmult_key(U, scalar_invert(r));
 }

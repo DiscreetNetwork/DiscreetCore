@@ -8,32 +8,34 @@
 
 #include "crypto.h"
 
+namespace discore
+{
 
-namespace discore {
-    struct multiexp_data {
+    struct MultiexpData {
         key scalar;
         ge_p3 point;
 
-        multiexp_data() {}
-        multiexp_data(const key &s, const ge_p3 &p): scalar(s), point(p) {}
-        multiexp_data(const key &s, const key &p): scalar(s)
+        MultiexpData() {}
+        MultiexpData(const key& s, const ge_p3& p) : scalar(s), point(p) {}
+        MultiexpData(const key& s, const key& p) : scalar(s)
         {
-            CHECK_THROW_ERR(ge_frombytes_vartime(&point, p.bytes) == 0, "ge_frombytes_vartime failed (multiexp_data)");
+            CHECK_THROW_ERR(ge_frombytes_vartime(&point, p.bytes) == 0, "ge_frombytes_vartime failed");
         }
     };
 
-    struct straus_cache;
-    struct pippenger_cache;
+    struct straus_cached_data;
+    struct pippenger_cached_data;
 
-    key heap_conv(std::vector<multiexp_data> data);
-    key heap_conv_robust(std::vector<multiexp_data> data);
-    std::shared_ptr<straus_cache> straus_init(const std::vector<multiexp_data> &data, size_t N = 0);
-    size_t straus_get_cache_size(const std::shared_ptr<straus_cache> &cache);
-    key straus(const std::vector<multiexp_data> &data, const std::shared_ptr<straus_cache> &cache = NULL, size_t STEP = 0);
-    std::shared_ptr<pippenger_cache> pippenger_init(const std::vector<multiexp_data> &data, size_t start_offset = 0, size_t N = 0);
-    size_t pippenger_get_cache_size(const std::shared_ptr<pippenger_cache> &cache);
+    key bos_coster_heap_conv(std::vector<MultiexpData> data);
+    key bos_coster_heap_conv_robust(std::vector<MultiexpData> data);
+    std::shared_ptr<straus_cached_data> straus_init_cache(const std::vector<MultiexpData>& data, size_t N = 0);
+    size_t straus_get_cache_size(const std::shared_ptr<straus_cached_data>& cache);
+    key straus(const std::vector<MultiexpData>& data, const std::shared_ptr<straus_cached_data>& cache = NULL, size_t STEP = 0);
+    std::shared_ptr<pippenger_cached_data> pippenger_init_cache(const std::vector<MultiexpData>& data, size_t start_offset = 0, size_t N = 0);
+    size_t pippenger_get_cache_size(const std::shared_ptr<pippenger_cached_data>& cache);
     size_t get_pippenger_c(size_t N);
-    key pippenger(const std::vector<multiexp_data> &data, const std::shared_ptr<pippenger_cache> &cache = NULL, size_t cache_size = 0, size_t c = 0);
+    key pippenger(const std::vector<MultiexpData>& data, const std::shared_ptr<pippenger_cached_data>& cache = NULL, size_t cache_size = 0, size_t c = 0);
+
 }
 
 #endif // MULTIEXP_H

@@ -12,10 +12,62 @@ extern "C" {
 //#define ALTERNATE_LAYOUT
 //#define TRACK_STRAUS_ZERO_IDENTITY
 
-namespace discore {
-    static inline bool operator<(const key &k0, const key &k1)
+//   per points us for N/B points (B point bands)
+//   raw   alt   128/192  4096/192  4096/4096
+//   0     0     52.6     71        71.2
+//   0     1     53.2     72.2      72.4
+//   1     0     52.7     67        67.1
+//   1     1     52.8     70.4      70.2
+
+// Pippenger:
+// 	1	2	3	4	5	6	7	8	9	bestN
+// 2	555	598	621	804	1038	1733	2486	5020	8304	1
+// 4	783	747	800	1006	1428	2132	3285	5185	9806	2
+// 8	1174	1071	1095	1286	1640	2398	3869	6378	12080	2
+// 16	2279	1874	1745	1739	2144	2831	4209	6964	12007	4
+// 32	3910	3706	2588	2477	2782	3467	4856	7489	12618	4
+// 64	7184	5429	4710	4368	4010	4672	6027	8559	13684	5
+// 128	14097	10574	8452	7297	6841	6718	8615	10580	15641	6
+// 256	27715	20800	16000	13550	11875	11400	11505	14090	18460	6
+// 512	55100	41250	31740	26570	22030	19830	20760	21380	25215	6
+// 1024	111520	79000	61080	49720	43080	38320	37600	35040	36750	8
+// 2048	219480	162680	122120	102080	83760	70360	66600	63920	66160	8
+// 4096	453320	323080	247240	210200	180040	150240	132440	114920	110560	9
+
+// 			2	4	8	16	32	64	128	256	512	1024	2048	4096
+// Bos Coster		858	994	1316	1949	3183	5512	9865	17830	33485	63160	124280	246320
+// Straus		226	341	548	980	1870	3538	7039	14490	29020	57200	118640	233640
+// Straus/cached	226	315	485	785	1514	2858	5753	11065	22970	45120	98880	194840
+// Pippenger		555	747	1071	1739	2477	4010	6718	11400	19830	35040	63920	110560
+
+// Best/cached		Straus	Straus	Straus	Straus	Straus	Straus	Straus	Straus	Pip	Pip	Pip	Pip
+// Best/uncached	Straus	Straus	Straus	Straus	Straus	Straus	Pip	Pip	Pip	Pip	Pip	Pip
+
+// New timings:
+//   Pippenger:
+//     2/1 always
+//     3/2 at ~13
+//     4/3 at ~29
+//     5/4 at ~83
+//     6/5 < 200
+//     7/6 at ~470
+//     8/7 at ~1180
+//     9/8 at ~2290
+//   Cached Pippenger:
+//     6/5 < 200
+//     7/6 at 460
+//     8/7 at 1180
+//     9/8 at 2300
+//
+//     Cached Straus/Pippenger cross at 232
+//
+
+namespace discore
+{
+
+    static inline bool operator<(const key& k0, const key& k1)
     {
-        for (int n = 31; n >= 0; n--)
+        for (int n = 31; n >= 0; --n)
         {
             if (k0.bytes[n] < k1.bytes[n])
                 return true;
@@ -25,11 +77,11 @@ namespace discore {
         return false;
     }
 
-    static inline key div2(const key &k)
+    static inline key div2(const key& k)
     {
         key res;
         int carry = 0;
-        for (int n = 31; n >= 0; n--)
+        for (int n = 31; n >= 0; --n)
         {
             int new_carry = (k.bytes[n] & 1) << 7;
             res.bytes[n] = k.bytes[n] / 2 + carry;
@@ -40,49 +92,44 @@ namespace discore {
 
     static inline key pow2(size_t n)
     {
-        CHECK_THROW_ERR(n < 256, "invalid pow2 argument");
+        CHECK_THROW_ERR(n < 256, "Invalid pow2 argument");
         key res = zero();
-        res[n >> 3] |= 1<<(n&7);
+        res[n >> 3] |= 1 << (n & 7);
         return res;
     }
 
-    static inline int test(const key &k, size_t n)
+    static inline int test(const key& k, size_t n)
     {
         if (n >= 256) return 0;
         return k[n >> 3] & (1 << (n & 7));
     }
 
-    static inline void add(ge_p3 &p3, const ge_cached &other)
+    static inline void add(ge_p3& p3, const ge_cached& other)
     {
         ge_p1p1 p1;
         ge_add(&p1, &p3, &other);
         ge_p1p1_to_p3(&p3, &p1);
     }
 
-    static inline void add(ge_p3 &p3, const ge_p3 &other)
+    static inline void add(ge_p3& p3, const ge_p3& other)
     {
         ge_cached cached;
         ge_p3_to_cached(&cached, &other);
         add(p3, cached);
     }
 
-    key heap_conv(std::vector<multiexp_data> data)
+    key bos_coster_heap_conv(std::vector<MultiexpData> data)
     {
         size_t points = data.size();
-        CHECK_THROW_ERR(points > 1, "not enough points for heap_conv");
+        CHECK_THROW_ERR(points > 1, "Not enough points");
         std::vector<size_t> heap(points);
-
-        for (size_t n = 0; n < points; n++) {
+        for (size_t n = 0; n < points; ++n)
             heap[n] = n;
-        }
 
-        auto Comp = [&](size_t e0, size_t e1) {
-            return data[e0].scalar < data[e1].scalar;
-        };
-
+        auto Comp = [&](size_t e0, size_t e1) { return data[e0].scalar < data[e1].scalar; };
         std::make_heap(heap.begin(), heap.end(), Comp);
-
-        while(heap.size() > 1) {
+        while (heap.size() > 1)
+        {
             std::pop_heap(heap.begin(), heap.end(), Comp);
             size_t index1 = heap.back();
             heap.pop_back();
@@ -107,54 +154,48 @@ namespace discore {
             heap.push_back(index2);
             std::push_heap(heap.begin(), heap.end(), Comp);
         }
-
+        //return scalarmult_key(data[index1].point, data[index1].scalar);
         std::pop_heap(heap.begin(), heap.end(), Comp);
-        size_t index = heap.back();
+        size_t index1 = heap.back();
         heap.pop_back();
-
         ge_p2 p2;
-        ge_scalarmult(&p2, data[index].scalar.bytes, &data[index].point);
-        
+        ge_scalarmult(&p2, data[index1].scalar.bytes, &data[index1].point);
         key res;
         ge_tobytes(res.bytes, &p2);
         return res;
     }
 
-    key heap_conv_robust(std::vector<multiexp_data> data)
+    key bos_coster_heap_conv_robust(std::vector<MultiexpData> data)
     {
         size_t points = data.size();
-        CHECK_THROW_ERR(points > 1, "not enough points for heap_conv_robust");
+        CHECK_THROW_ERR(points > 0, "Not enough points");
         std::vector<size_t> heap;
         heap.reserve(points);
-
-        for (size_t n = 0; n < points; n++) {
-            if(!(data[n].scalar == zero()) && !ge_p3_is_point_at_infinity(&data[n].point))
+        for (size_t n = 0; n < points; ++n)
+        {
+            if (!(data[n].scalar == zero()) && !ge_p3_is_point_at_infinity(&data[n].point))
                 heap.push_back(n);
         }
-
         points = heap.size();
         if (points == 0)
             return identity();
 
-        auto Comp = [&](size_t e0, size_t e1) {
-            return data[e0].scalar < data[e1].scalar;
-        };
-
+        auto Comp = [&](size_t e0, size_t e1) { return data[e0].scalar < data[e1].scalar; };
         std::make_heap(heap.begin(), heap.end(), Comp);
 
-        if (points < 2) {
+        if (points < 2)
+        {
             std::pop_heap(heap.begin(), heap.end(), Comp);
-            size_t index = heap.back();
-
+            size_t index1 = heap.back();
             ge_p2 p2;
-            ge_scalarmult(&p2, data[index].scalar.bytes, &data[index].point);
-            
+            ge_scalarmult(&p2, data[index1].scalar.bytes, &data[index1].point);
             key res;
             ge_tobytes(res.bytes, &p2);
             return res;
         }
 
-        while(heap.size() > 1) {
+        while (heap.size() > 1)
+        {
             std::pop_heap(heap.begin(), heap.end(), Comp);
             size_t index1 = heap.back();
             heap.pop_back();
@@ -166,19 +207,19 @@ namespace discore {
             ge_p1p1 p1;
             ge_p2 p2;
 
-            while (1) {
+            while (1)
+            {
                 key s1_2 = div2(data[index1].scalar);
-                if (!(data[index2].scalar.bytes[0] & 1))
+                if (!(data[index2].scalar < s1_2))
                     break;
-
-                if (data[index1].scalar.bytes[0] & 1) {
+                if (data[index1].scalar.bytes[0] & 1)
+                {
                     data.resize(data.size() + 1);
                     data.back().scalar = identity();
                     data.back().point = data[index1].point;
                     heap.push_back(data.size() - 1);
                     std::push_heap(heap.begin(), heap.end(), Comp);
                 }
-
                 data[index1].scalar = div2(data[index1].scalar);
                 ge_p3_to_p2(&p2, &data[index1].point);
                 ge_p2_dbl(&p1, &p2);
@@ -201,13 +242,12 @@ namespace discore {
             std::push_heap(heap.begin(), heap.end(), Comp);
         }
 
+        //return scalarmult_key(data[index1].point, data[index1].scalar);
         std::pop_heap(heap.begin(), heap.end(), Comp);
-        size_t index = heap.back();
+        size_t index1 = heap.back();
         heap.pop_back();
-
         ge_p2 p2;
-        ge_scalarmult(&p2, data[index].scalar.bytes, &data[index].point);
-        
+        ge_scalarmult(&p2, data[index1].scalar.bytes, &data[index1].point);
         key res;
         ge_tobytes(res.bytes, &p2);
         return res;
@@ -215,53 +255,51 @@ namespace discore {
 
 #define STRAUS_C 4
 
-    struct straus_cache {
+    struct straus_cached_data
+    {
 #ifdef RAW_MEMORY_BLOCK
         size_t size;
-        ge_cached *multiples;
-        straus_cache(): size(0), multiples(NULL) {}
-        ~straus_cache() { aligned_free(multiples); }
-#else 
+        ge_cached* multiples;
+        straus_cached_data() : size(0), multiples(NULL) {}
+        ~straus_cached_data() { aligned_free(multiples); }
+#else
         std::vector<std::vector<ge_cached>> multiples;
 #endif
     };
-
 #ifdef RAW_MEMORY_BLOCK
 #ifdef ALTERNATE_LAYOUT
-#define CACHE_OFFSET(cache, point, digit) cache->multiples[(point)*((1<<STRAUS_C)-1)+((digit)-1)]
+#define CACHE_OFFSET(cache,point,digit) cache->multiples[(point)*((1<<STRAUS_C)-1)+((digit)-1)]
 #else
-#define CACHE_OFFSET(cache, point, digit) cache->multiples[(point)+cache->size*((digit)-1)]
+#define CACHE_OFFSET(cache,point,digit) cache->multiples[(point)+cache->size*((digit)-1)]
 #endif
 #else
 #ifdef ALTERNATE_LAYOUT
-#define CACHE_OFFSET(cache, point, digit) local_cache->multiples[j][digit-1]
+#define CACHE_OFFSET(cache,point,digit) local_cache->multiples[j][digit-1]
 #else
-#define CACHE_OFFSET(cache, point, digit) local_cache->multiples[digit][j]
+#define CACHE_OFFSET(cache,point,digit) local_cache->multiples[digit][j]
 #endif
 #endif
 
-    std::shared_ptr<straus_cache> straus_init(const std::vector<multiexp_data> &data, size_t N)
+    std::shared_ptr<straus_cached_data> straus_init_cache(const std::vector<MultiexpData>& data, size_t N)
     {
         if (N == 0)
             N = data.size();
-        
-        CHECK_THROW_ERR(N <= data.size(), "bad cache base data");
-
+        CHECK_THROW_ERR(N <= data.size(), "Bad cache base data");
         ge_p1p1 p1;
         ge_p3 p3;
-        std::shared_ptr<straus_cache> cache(new straus_cache());
+        std::shared_ptr<straus_cached_data> cache(new straus_cached_data());
 
 #ifdef RAW_MEMORY_BLOCK
         const size_t offset = cache->size;
-        cache->multiples = (ge_cached*)aligned_realloc(cache->multiples, sizeof(ge_cached)* ((1<<STRAUS_C)-1) * std::max(offset, N), 4096);
-        CHECK_THROW_ERR(cache->multiples, "OOM: OUT OF MEMORY!");
+        cache->multiples = (ge_cached*)aligned_realloc(cache->multiples, sizeof(ge_cached) * ((1 << STRAUS_C) - 1) * std::max(offset, N), 4096);
+        CHECK_THROW_ERR(cache->multiples, "Out of memory");
         cache->size = N;
-
-        for (size_t j = offset; j < N; j++) {
+        for (size_t j = offset; j < N; ++j)
+        {
             ge_p3_to_cached(&CACHE_OFFSET(cache, j, 1), &data[j].point);
-
-            for (size_t i = 2; i < 1<<STRAUS_C; i++) {
-                ge_add(&p1, &data[j].point, &CACHE_OFFSET(cache, j, i-1));
+            for (size_t i = 2; i < 1 << STRAUS_C; ++i)
+            {
+                ge_add(&p1, &data[j].point, &CACHE_OFFSET(cache, j, i - 1));
                 ge_p1p1_to_p3(&p3, &p1);
                 ge_p3_to_cached(&CACHE_OFFSET(cache, j, i), &p3);
             }
@@ -270,32 +308,30 @@ namespace discore {
 #ifdef ALTERNATE_LAYOUT
         const size_t offset = cache->multiples.size();
         cache->multiples.resize(std::max(offset, N));
-        for (size_t i = offset; i < N; i++) {
-            cache->multiples[i].resize((1<<STRAUS_C)-1);
+        for (size_t i = offset; i < N; ++i)
+        {
+            cache->multiples[i].resize((1 << STRAUS_C) - 1);
             ge_p3_to_cached(&cache->multiples[i][0], &data[i].point);
-
-            for (size_t j = 2; j < 1<<STRAUS_C; j++) {
-                ge_add(&p1, &data[i].point, &cache->multiples[i][j-2]);
+            for (size_t j = 2; j < 1 << STRAUS_C; ++j)
+            {
+                ge_add(&p1, &data[i].point, &cache->multiples[i][j - 2]);
                 ge_p1p1_to_p3(&p3, &p1);
-                ge_p3_to_cached(&cache->multiples[i][j-1], &p3);
+                ge_p3_to_cached(&cache->multiples[i][j - 1], &p3);
             }
         }
 #else
-        cache->multiples.resize(1<<STRAUS_C);
+        cache->multiples.resize(1 << STRAUS_C);
         size_t offset = cache->multiples[1].size();
         cache->multiples[1].resize(std::max(offset, N));
-
-        for (size_t i = offset; i < N; i++) {
+        for (size_t i = offset; i < N; ++i)
             ge_p3_to_cached(&cache->multiples[1][i], &data[i].point);
-        }
-
-        for (size_t i = 2; i < 1<<STRAUS_C; i++) {
+        for (size_t i = 2; i < 1 << STRAUS_C; ++i)
             cache->multiples[i].resize(std::max(offset, N));
-        }
-
-        for (size_t j = offset; j < N; j++) {
-            for (size_t i = 2; i < 1<<STRAUS_C; i++) {
-                ge_add(&p1, &data[j].point, &cache->multiples[i-1][j]);
+        for (size_t j = offset; j < N; ++j)
+        {
+            for (size_t i = 2; i < 1 << STRAUS_C; ++i)
+            {
+                ge_add(&p1, &data[j].point, &cache->multiples[i - 1][j]);
                 ge_p1p1_to_p3(&p3, &p1);
                 ge_p3_to_cached(&cache->multiples[i][j], &p3);
             }
@@ -306,117 +342,111 @@ namespace discore {
         return cache;
     }
 
-    size_t straus_get_cache_size(const std::shared_ptr<straus_cache> &cache)
+    size_t straus_get_cache_size(const std::shared_ptr<straus_cached_data>& cache)
     {
         size_t sz = 0;
 #ifdef RAW_MEMORY_BLOCK
-        sz += cache->size * sizeof(ge_cached) * ((1<<STRAUS_C)-1);
+        sz += cache->size * sizeof(ge_cached) * ((1 << STRAUS_C) - 1);
 #else
-        for (const auto &e0: cache->multiples) {
+        for (const auto& e0 : cache->multiples)
             sz += e0.size() * sizeof(ge_cached);
-        }
 #endif
         return sz;
     }
 
-    key straus(const std::vector<multiexp_data> &data, const std::shared_ptr<straus_cache> &cache, size_t STEP)
+    key straus(const std::vector<MultiexpData>& data, const std::shared_ptr<straus_cached_data>& cache, size_t STEP)
     {
-        CHECK_THROW_ERR(cache == NULL || cache->size >= data.size(), "cache is too small! (straus)");
+        CHECK_THROW_ERR(cache == NULL || cache->size >= data.size(), "Cache is too small");
         STEP = STEP ? STEP : 192;
 
-        static constexpr unsigned int mask = (1<<STRAUS_C)-1;
-        std::shared_ptr<straus_cache> local_cache = cache == NULL ? straus_init(data) : cache;
+        std::shared_ptr<straus_cached_data> local_cache = cache == NULL ? straus_init_cache(data) : cache;
         ge_cached cached;
         ge_p1p1 p1;
 
 #ifdef TRACK_STRAUS_ZERO_IDENTITY
         std::vector<uint8_t> skip(data.size());
-        for (size_t i = 0; i < data.size(); i++) {
+        for (size_t i = 0; i < data.size(); ++i)
             skip[i] = data[i].scalar == zero() || ge_p3_is_point_at_infinity(&data[i].point);
-        }
 #endif
 
 #if STRAUS_C==4
-        std::unique_ptr<uint8_t[]> digits{new uint8_t[64 * data.size()]};
+        std::unique_ptr<uint8_t[]> digits{ new uint8_t[64 * data.size()] };
 #else
-        std::unique_ptr<uint8_t[]> digits{new uint8_t[256 * data.size()]};
+        std::unique_ptr<uint8_t[]> digits{ new uint8_t[256 * data.size()] };
 #endif
-        for (size_t j = 0; j < data.size(); j++) {
-            const unsigned char *bytes = data[j].scalar.bytes;
+        for (size_t j = 0; j < data.size(); ++j)
+        {
+            const unsigned char* bytes = data[j].scalar.bytes;
 #if STRAUS_C==4
             unsigned int i;
-            for (i = 0; i < 64; i += 2, bytes++) {
-                digits[j*64+i] = bytes[0] & 0xf;
-                digits[j*64+i+1] = bytes[0] >> 4;
+            for (i = 0; i < 64; i += 2, bytes++)
+            {
+                digits[j * 64 + i] = bytes[0] & 0xf;
+                digits[j * 64 + i + 1] = bytes[0] >> 4;
             }
 #elif 1
             unsigned char bytes33[33];
-            memcpy(bytes33,  data[j].scalar.bytes, 32);
+            memcpy(bytes33, data[j].scalar.bytes, 32);
             bytes33[32] = 0;
             bytes = bytes33;
-            for (size_t i = 0; i < 256; i++) {
-                digits[j*256+i] = ((bytes[i>>3] | (bytes[(i>>3)+1]<<8)) >> (i&7)) & mask;
-            }
+            static constexpr unsigned int mask = (1 << STRAUS_C) - 1;
+            for (size_t i = 0; i < 256; ++i)
+                digits[j * 256 + i] = ((bytes[i >> 3] | (bytes[(i >> 3) + 1] << 8)) >> (i & 7)) & mask;
 #else
             key shifted = data[j].scalar;
-            for (size_t i = 0; i < 256; i++) {
-                digits[j*256+i] = shifted.bytes[0] & 0xf;
-                shifted = div2(shifted, (256-i)>>3);
+            for (size_t i = 0; i < 256; ++i)
+            {
+                digits[j * 256 + i] = shifted.bytes[0] & 0xf;
+                shifted = div2(shifted, (256 - i) >> 3);
             }
 #endif
         }
 
         key maxscalar = zero();
-        for (size_t i = 0; i < data.size(); i++) {
-            if (maxscalar < data[i].scalar) {
+        for (size_t i = 0; i < data.size(); ++i)
+            if (maxscalar < data[i].scalar)
                 maxscalar = data[i].scalar;
-            }
-        }
         size_t start_i = 0;
-        while (start_i < 256 && !(maxscalar < pow2(start_i))) {
+        while (start_i < 256 && !(maxscalar < pow2(start_i)))
             start_i += STRAUS_C;
-        }
 
         ge_p3 res_p3 = ge_p3_identity;
 
-        for (size_t start_offset = 0; start_offset < data.size(); start_offset += STEP) {
+        for (size_t start_offset = 0; start_offset < data.size(); start_offset += STEP)
+        {
             const size_t num_points = std::min(data.size() - start_offset, STEP);
 
             ge_p3 band_p3 = ge_p3_identity;
             size_t i = start_i;
-
-            if (!(i < STRAUS_C)) {
+            if (!(i < STRAUS_C))
                 goto skipfirst;
-            }
-
-            while (!(i < STRAUS_C)) {
+            while (!(i < STRAUS_C))
+            {
                 ge_p2 p2;
                 ge_p3_to_p2(&p2, &band_p3);
-
-                for (size_t j = 0; j < STRAUS_C; j++) {
+                for (size_t j = 0; j < STRAUS_C; ++j)
+                {
                     ge_p2_dbl(&p1, &p2);
-
-                    if (j == STRAUS_C - 1) {
+                    if (j == STRAUS_C - 1)
                         ge_p1p1_to_p3(&band_p3, &p1);
-                    }
-                    else {
+                    else
                         ge_p1p1_to_p2(&p2, &p1);
-                    }
                 }
-skipfirst:
+            skipfirst:
                 i -= STRAUS_C;
-                for (size_t j = start_offset; j < start_offset + num_points; j++) {
+                for (size_t j = start_offset; j < start_offset + num_points; ++j)
+                {
 #ifdef TRACK_STRAUS_ZERO_IDENTITY
-                    if (skip[j]) {
+                    if (skip[j])
                         continue;
-                    }
 #endif
-#if STRAUS_C==4 
-                    const uint8_t digit = digits[j*64+i/4];
+#if STRAUS_C==4
+                    const uint8_t digit = digits[j * 64 + i / 4];
 #else
-                    const uint8_t digit = digits[j*256+i];
+                    const uint8_t digit = digits[j * 256 + i];
 #endif
-                    if (digit) {
+                    if (digit)
+                    {
                         ge_add(&p1, &band_p3, &CACHE_OFFSET(local_cache, j, digit));
                         ge_p1p1_to_p3(&band_p3, &p1);
                     }
@@ -433,7 +463,7 @@ skipfirst:
         return res;
     }
 
-    size_t get_pippenger_c(size_t N) 
+    size_t get_pippenger_c(size_t N)
     {
         if (N <= 13) return 2;
         if (N <= 29) return 3;
@@ -445,145 +475,127 @@ skipfirst:
         return 9;
     }
 
-    struct pippenger_cache {
+    struct pippenger_cached_data
+    {
         size_t size;
-        ge_cached *cached;
-        pippenger_cache(): size(0), cached(NULL) {}
-        ~pippenger_cache() { aligned_free(cached); }
+        ge_cached* cached;
+        pippenger_cached_data() : size(0), cached(NULL) {}
+        ~pippenger_cached_data() { aligned_free(cached); }
     };
 
-    std::shared_ptr<pippenger_cache> pippenger_init(const std::vector<multiexp_data> &data, size_t start_offset, size_t N) 
+    std::shared_ptr<pippenger_cached_data> pippenger_init_cache(const std::vector<MultiexpData>& data, size_t start_offset, size_t N)
     {
-        CHECK_THROW_ERR(start_offset <= data.size(), "bad cache base data (pippenger_init)");
-        if (N == 0) {
+        CHECK_THROW_ERR(start_offset <= data.size(), "Bad cache base data");
+        if (N == 0)
             N = data.size() - start_offset;
-        }
-
-        CHECK_THROW_ERR(N <= data.size() - start_offset, "bad cache base data (pippenger_init)");
-
-        std::shared_ptr<pippenger_cache> cache(new pippenger_cache());
+        CHECK_THROW_ERR(N <= data.size() - start_offset, "Bad cache base data");
+        std::shared_ptr<pippenger_cached_data> cache(new pippenger_cached_data());
 
         cache->size = N;
         cache->cached = (ge_cached*)aligned_realloc(cache->cached, N * sizeof(ge_cached), 4096);
-        CHECK_THROW_ERR(cache->cached, "OOM: OUT OF MEMORY!");
-
-        for (size_t i = 0; i < N; i++) {
-            ge_p3_to_cached(&cache->cached[i], &data[i+start_offset].point);
-        }
+        CHECK_THROW_ERR(cache->cached, "Out of memory");
+        for (size_t i = 0; i < N; ++i)
+            ge_p3_to_cached(&cache->cached[i], &data[i + start_offset].point);
 
         return cache;
     }
 
-    size_t pippenger_get_cache_size(const std::shared_ptr<pippenger_cache> &cache)
+    size_t pippenger_get_cache_size(const std::shared_ptr<pippenger_cached_data>& cache)
     {
         return cache->size * sizeof(*cache->cached);
     }
 
-    key pippenger(const std::vector<multiexp_data> &data, const std::shared_ptr<pippenger_cache> &cache, size_t cache_size, size_t c)
+    key pippenger(const std::vector<MultiexpData>& data, const std::shared_ptr<pippenger_cached_data>& cache, size_t cache_size, size_t c)
     {
-        if (cache != NULL && cache_size == 0) {
+        if (cache != NULL && cache_size == 0)
             cache_size = cache->size;
-        }
-
-        CHECK_THROW_ERR(cache == NULL || cache_size <= cache->size, "cache is too small (pippenger)");
-
-        if (c == 0) {
+        CHECK_THROW_ERR(cache == NULL || cache_size <= cache->size, "Cache is too small");
+        if (c == 0)
             c = get_pippenger_c(data.size());
-        }
-
-        CHECK_THROW_ERR(c <= 9, "c is too large (pippenger)");
+        CHECK_THROW_ERR(c <= 9, "c is too large");
 
         ge_p3 result = ge_p3_identity;
         bool result_init = false;
-        std::unique_ptr<ge_p3[]> buckets{new ge_p3[1<<c]};
-        bool buckets_init[1<<9];
-        std::shared_ptr<pippenger_cache> local_cache = cache == NULL ? pippenger_init(data) : cache;
-        std::shared_ptr<pippenger_cache> local_cache_2 = data.size() > cache_size ? pippenger_init(data, cache_size) : NULL;
+        std::unique_ptr<ge_p3[]> buckets{ new ge_p3[1 << c] };
+        bool buckets_init[1 << 9];
+        std::shared_ptr<pippenger_cached_data> local_cache = cache == NULL ? pippenger_init_cache(data) : cache;
+        std::shared_ptr<pippenger_cached_data> local_cache_2 = data.size() > cache_size ? pippenger_init_cache(data, cache_size) : NULL;
 
-        key maxscalar = zero();
-
-        for (size_t i = 0; i < data.size(); i++) {
-            if (maxscalar < data[i].scalar) {
+        key maxscalar = 
+            zero();
+        for (size_t i = 0; i < data.size(); ++i)
+        {
+            if (maxscalar < data[i].scalar)
                 maxscalar = data[i].scalar;
-            }
         }
-
         size_t groups = 0;
-
-        while (groups < 256 && !(maxscalar < pow2(groups))) {
-            groups++;
-        }
-
+        while (groups < 256 && !(maxscalar < pow2(groups)))
+            ++groups;
         groups = (groups + c - 1) / c;
 
-        for (size_t k = groups; k-- > 0; ) {
-            if (result_init) {
+        for (size_t k = groups; k-- > 0; )
+        {
+            if (result_init)
+            {
                 ge_p2 p2;
                 ge_p3_to_p2(&p2, &result);
-
-                for (size_t i = 0; i < c; i++) {
+                for (size_t i = 0; i < c; ++i)
+                {
                     ge_p1p1 p1;
                     ge_p2_dbl(&p1, &p2);
-
-                    if (i == c - 1) {
+                    if (i == c - 1)
                         ge_p1p1_to_p3(&result, &p1);
-                    }
-                    else {
+                    else
                         ge_p1p1_to_p2(&p2, &p1);
-                    }
                 }
             }
+            memset(buckets_init, 0, 1u << c);
 
-            memset(buckets_init, 0, 1u<<c);
-
-            for (size_t i = 0; i < data.size(); i++) {
+            // partition scalars into buckets
+            for (size_t i = 0; i < data.size(); ++i)
+            {
                 unsigned int bucket = 0;
-
-                for (size_t j = 0; j < c; j++) {
-                    if (test(data[i].scalar, k*c+j)) {
-                        bucket |= 1<<j;
-                    }
-                }
-
-                if (bucket == 0) {
+                for (size_t j = 0; j < c; ++j)
+                    if (test(data[i].scalar, k * c + j))
+                        bucket |= 1 << j;
+                if (bucket == 0)
                     continue;
-                }
-
-                CHECK_THROW_ERR(bucket < (1u<<c), "bucket overflow (pippenger)");
-
-                if (buckets_init[bucket]) {
-                    if (i < cache_size) {
+                CHECK_THROW_ERR(bucket < (1u << c), "bucket overflow");
+                if (buckets_init[bucket])
+                {
+                    if (i < cache_size)
                         add(buckets[bucket], local_cache->cached[i]);
-                    }
-                    else {
+                    else
                         add(buckets[bucket], local_cache_2->cached[i - cache_size]);
-                    }
                 }
-                else {
+                else
+                {
                     buckets[bucket] = data[i].point;
                     buckets_init[bucket] = true;
                 }
             }
 
+            // sum the buckets
             ge_p3 pail;
             bool pail_init = false;
-
-            for (size_t i = (1<<c)-1; i > 0; i--) {
-                if (buckets_init[i]) {
-                    if (pail_init) {
+            for (size_t i = (1 << c) - 1; i > 0; --i)
+            {
+                if (buckets_init[i])
+                {
+                    if (pail_init)
                         add(pail, buckets[i]);
-                    }
-                    else {
+                    else
+                    {
                         pail = buckets[i];
                         pail_init = true;
                     }
                 }
-
-                if (pail_init) {
-                    if (result_init) {
+                if (pail_init)
+                {
+                    if (result_init)
                         add(result, pail);
-                    }
-                    else {
+                    else
+                    {
                         result = pail;
                         result_init = true;
                     }

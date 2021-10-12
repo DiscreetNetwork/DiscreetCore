@@ -51,7 +51,7 @@ namespace discore {
 
         discore::dis_amount fee;
 
-        bulletproof range_proof;
+        Bulletproof range_proof;
         std::vector<dis_sig> sigs;
     };   
 }
@@ -77,6 +77,7 @@ EXPORT discore::key ScalarmultKey1(const discore::key &p, const discore::key &a)
 EXPORT discore::key ScalarmultH(const discore::key &a);
 EXPORT void Scalarmult8(ge_p3 &res, const discore::key &p);
 EXPORT discore::key Scalarmult81(const discore::key &p);
+EXPORT void scalarmult_8_correct(discore::key& res, const discore::key& p);
 EXPORT bool InMainSubgroup(const discore::key &a);
 EXPORT void AddKeys(discore::key &ab, const discore::key &a, const discore::key &b);
 EXPORT discore::key AddKeys_1(const discore::key &a, const discore::key &b);
@@ -105,7 +106,7 @@ EXPORT void ECDHEncode(discore::ecdhtuple &unmasked, const discore::key &secret,
 EXPORT void ECDHDecode(discore::ecdhtuple &masked, const discore::key &secret, bool v2);
 EXPORT void SchnorrSign(discore::key& s, discore::key& e, const discore::key& p, const discore::key& x, const discore::key& m);
 EXPORT bool SchnorrVerify(discore::key& s, discore::key& e, const discore::key& p, const discore::key& m);
-EXPORT void GenerateLinkingTag(discore::key& r);
+EXPORT void GenerateLinkingTag(discore::key &J, const discore::key& r);
 
 #ifdef __cplusplus
 }

@@ -166,6 +166,7 @@
     <ClInclude Include="hmac\hmacsha256.h" />
     <ClInclude Include="hmac\hmacsha512.h" />
     <ClInclude Include="initializer.h" />
+    <ClInclude Include="internal_exception_debug.h" />
     <ClInclude Include="keccak\keccak.h" />
     <ClInclude Include="multiexp.h" />
     <ClInclude Include="ops.h" />
@@ -187,6 +188,7 @@
     <ClInclude Include="verify.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="interal_exception_debug.cpp" />
     <ClCompile Include="src\core\bulletproof.cpp" />
     <ClCompile Include="src\core\multiexp.cpp" />
     <ClCompile Include="src\core\ops.cpp" />

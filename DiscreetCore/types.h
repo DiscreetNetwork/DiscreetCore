@@ -132,6 +132,14 @@ namespace discore {
         key a, b, t;
     };
 
+    struct ArgBulletproofPlus {
+        uint64_t size;
+        key16 V;
+        key A, A1, B;
+        key r1, s1, d1;
+        key10 L, R;
+    };
+
     struct Bulletproof {
         keyV V;
         key A, S, T1, T2;
@@ -148,6 +156,24 @@ namespace discore {
 
         bool operator==(const Bulletproof &other) const { return V == other.V && A == other.A && S == other.S && T1 == other.T1 && T2 == other.T2 && taux == other.taux && mu == other.mu && L == other.L && R == other.R && a == other.a && b == other.b && t == other.t; }
     };
+
+    struct BulletproofPlus
+    {
+        keyV V;
+        key A, A1, B;
+        key r1, s1, d1;
+        keyV L, R;
+
+        BulletproofPlus() :
+            A({}), A1({}), B({}), r1({}), s1({}), d1({}) {}
+        BulletproofPlus(const key& V, const key& A, const key& A1, const key& B, const key& r1, const key& s1, const key& d1, const keyV& L, const keyV& R) :
+            V({ V }), A(A), A1(A1), B(B), r1(r1), s1(s1), d1(d1), L(L), R(R) {}
+        BulletproofPlus(const keyV& V, const key& A, const key& A1, const key& B, const key& r1, const key& s1, const key& d1, const keyV& L, const keyV& R) :
+            V(V), A(A), A1(A1), B(B), r1(r1), s1(s1), d1(d1), L(L), R(R) {}
+
+        bool operator==(const BulletproofPlus& other) const { return V == other.V && A == other.A && A1 == other.A1 && B == other.B && r1 == other.r1 && s1 == other.s1 && d1 == other.d1 && L == other.L && R == other.R; }
+    };
+
 
     struct dis_sig {
         TriptychProof proof;

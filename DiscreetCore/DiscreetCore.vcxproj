@@ -190,6 +190,7 @@
   <ItemGroup>
     <ClCompile Include="interal_exception_debug.cpp" />
     <ClCompile Include="src\core\bulletproof.cpp" />
+    <ClCompile Include="src\core\bulletproof_plus.cpp" />
     <ClCompile Include="src\core\multiexp.cpp" />
     <ClCompile Include="src\core\ops.cpp" />
     <ClCompile Include="src\core\proofs.cpp" />

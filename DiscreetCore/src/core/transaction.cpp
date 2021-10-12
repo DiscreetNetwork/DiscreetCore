@@ -630,16 +630,95 @@ bool SchnorrVerify(key &s, key &e, const key &p, const key &m)
     return check_signature(m.bytes, p.bytes, buf);
 }
 
+static key sm(key y, int n, const key& x)
+{
+    while (n--)
+        sc_mul(y.bytes, y.bytes, y.bytes);
+    sc_mul(y.bytes, y.bytes, x.bytes);
+    return y;
+}
+
+static key invert(const key& x)
+{
+    CHECK_THROW_ERR(!(x == discore::Z), "Cannot invert zero!");
+
+    key _1, _10, _100, _11, _101, _111, _1001, _1011, _1111;
+
+    _1 = x;
+    sc_mul(_10.bytes, _1.bytes, _1.bytes);
+    sc_mul(_100.bytes, _10.bytes, _10.bytes);
+    sc_mul(_11.bytes, _10.bytes, _1.bytes);
+    sc_mul(_101.bytes, _10.bytes, _11.bytes);
+    sc_mul(_111.bytes, _10.bytes, _101.bytes);
+    sc_mul(_1001.bytes, _10.bytes, _111.bytes);
+    sc_mul(_1011.bytes, _10.bytes, _1001.bytes);
+    sc_mul(_1111.bytes, _100.bytes, _1011.bytes);
+
+    key inv;
+    sc_mul(inv.bytes, _1111.bytes, _1.bytes);
+
+    inv = sm(inv, 123 + 3, _101);
+    inv = sm(inv, 2 + 2, _11);
+    inv = sm(inv, 1 + 4, _1111);
+    inv = sm(inv, 1 + 4, _1111);
+    inv = sm(inv, 4, _1001);
+    inv = sm(inv, 2, _11);
+    inv = sm(inv, 1 + 4, _1111);
+    inv = sm(inv, 1 + 3, _101);
+    inv = sm(inv, 3 + 3, _101);
+    inv = sm(inv, 3, _111);
+    inv = sm(inv, 1 + 4, _1111);
+    inv = sm(inv, 2 + 3, _111);
+    inv = sm(inv, 2 + 2, _11);
+    inv = sm(inv, 1 + 4, _1011);
+    inv = sm(inv, 2 + 4, _1011);
+    inv = sm(inv, 6 + 4, _1001);
+    inv = sm(inv, 2 + 2, _11);
+    inv = sm(inv, 3 + 2, _11);
+    inv = sm(inv, 3 + 2, _11);
+    inv = sm(inv, 1 + 4, _1001);
+    inv = sm(inv, 1 + 3, _111);
+    inv = sm(inv, 2 + 4, _1111);
+    inv = sm(inv, 1 + 4, _1011);
+    inv = sm(inv, 3, _101);
+    inv = sm(inv, 2 + 4, _1111);
+    inv = sm(inv, 3, _101);
+    inv = sm(inv, 1 + 2, _11);
+
+    // Confirm inversion
+    key temp;
+    sc_mul(temp.bytes, x.bytes, inv.bytes);
+    CHECK_THROW_ERR(temp == discore::I, "Scalar inversion failed!");
+
+    return inv;
+}
+
+static key U;
+
 void GenerateLinkingTag(key &J, const key &r)
 {
-    static const std::string U_salt("triptych U");
-    key u_h;
-    key U;
-    ge_p3 U_p3;
 
-    hash_data(u_h, U_salt.data(), U_salt.size());
-    hash_to_p3(U_p3, u_h);
+    static const std::string U_salt("triptych U");
+    key hashed_u_data;
+    ge_p3 U_p3;
+    hash_to_scalar(hashed_u_data, U_salt.data(), U_salt.size());
+    hash_to_p3(U_p3, hashed_u_data);
     ge_p3_tobytes(U.bytes, &U_p3);
 
-    J = scalarmult_key(U, scalar_invert(r));
+    scalarmult_key(J, U, invert(r));
+}
+
+key GenerateLinkingTag1(const key& r)
+{
+    static const std::string U_salt("triptych U");
+    key hashed_u_data;
+    ge_p3 U_p3;
+    hash_to_scalar(hashed_u_data, U_salt.data(), U_salt.size());
+    hash_to_p3(U_p3, hashed_u_data);
+    ge_p3_tobytes(U.bytes, &U_p3);
+
+    key J;
+    key r_1 = invert(r);
+    scalarmult_key(J, U, r_1);
+    return J;
 }

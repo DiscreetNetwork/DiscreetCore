@@ -104,8 +104,8 @@ EXPORT void ScalarAdd(discore::key& res, discore::key& a, discore::key& b);
 EXPORT void ScalarSub(discore::key& res, discore::key& a, discore::key& b);
 EXPORT void ECDHEncode(discore::ecdhtuple &unmasked, const discore::key &secret, bool v2);
 EXPORT void ECDHDecode(discore::ecdhtuple &masked, const discore::key &secret, bool v2);
-EXPORT void SchnorrSign(discore::key& s, discore::key& e, const discore::key& p, const discore::key& x, const discore::key& m);
-EXPORT bool SchnorrVerify(discore::key& s, discore::key& e, const discore::key& p, const discore::key& m);
+EXPORT void EdDSASign(discore::key& s, discore::key& e, discore::key& y, const discore::key& p, const discore::key& x, const discore::key& m);
+EXPORT bool EdDSAVerify(discore::key& s, discore::key& e, const discore::key& y, const discore::key& m);
 EXPORT void GenerateLinkingTag(discore::key &J, const discore::key& r);
 EXPORT discore::key GenerateLinkingTag1(const discore::key& r);
 #ifdef __cplusplus

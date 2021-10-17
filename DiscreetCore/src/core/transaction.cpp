@@ -613,21 +613,22 @@ void ECDHDecode(ecdhtuple &masked, const key &secret, bool v2)
     }
 }
 
-void SchnorrSign(key &s, key &e, const key &p, const key &x, const key &m)
+void EdDSASign(key &s, key &e, key &y, const key &p, const key &x, const key &m)
 {
     unsigned char buf[64];
     generate_signature(m.bytes, p.bytes, x.bytes, buf);
     memcpy(e.bytes, buf, 32);
     memcpy(s.bytes, buf + 32, 32);
+    memcpy(y.bytes, p.bytes, 32);
 }
 
-bool SchnorrVerify(key &s, key &e, const key &p, const key &m) 
+bool EdDSAVerify(key &s, key &e, const key &y, const key &m)
 {
     unsigned char buf[64];
     memcpy(buf, e.bytes, 32);
     memcpy(buf + 32, s.bytes, 32);
 
-    return check_signature(m.bytes, p.bytes, buf);
+    return check_signature(m.bytes, y.bytes, buf);
 }
 
 static key sm(key y, int n, const key& x)

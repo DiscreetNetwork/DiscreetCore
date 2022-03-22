@@ -99,5 +99,5 @@ clean:
 	rm -f *.o *.so *.dll
 
 core: all
-	$(CPP) -L$(BOOST_LIB) -lboost_thread -shared -o DiscreetCore.so bulletproof.o bulletproof_plus.o multiexp.o ops.o proofs.o sc_reduce32copy.o transaction.o types.o memwipe.o aligned.o sha256.o sha512.o ripemd160.o random.o chacha20.o hmacsha256.o hmacsha512.o pbkdf2.o keccak.o verify.o crypto_curve.o crypto_data.o crypto.o
+	$(CPP) -L$(BOOST_LIB) -lboost_thread -shared -o ../linux/DiscreetCore.so bulletproof.o bulletproof_plus.o multiexp.o ops.o proofs.o sc_reduce32copy.o transaction.o types.o memwipe.o aligned.o sha256.o sha512.o ripemd160.o random.o chacha20.o hmacsha256.o hmacsha512.o pbkdf2.o keccak.o verify.o crypto_curve.o crypto_data.o crypto.o
 

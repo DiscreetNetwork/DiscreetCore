@@ -7,10 +7,6 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/lock_guard.hpp>
 
-#if !defined(_WIN32)
-#include "random/xoroshiro.h"
-#endif
-
 extern "C" {
 #include "random/random.h"
 #include "sha/sha256.h"

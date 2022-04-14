@@ -28,17 +28,16 @@ namespace discore
     static constexpr size_t maxM = BULLETPROOF_MAX_OUTPUTS; // maximum number of outputs to aggregate into a single proof
 
     // Cached public generators
-    static key Hi[maxN * maxM], Gi[maxN * maxM];
     static ge_p3 Hi_p3[maxN * maxM], Gi_p3[maxN * maxM];
     static std::shared_ptr<straus_cached_data> straus_HiGi_cache;
     static std::shared_ptr<pippenger_cached_data> pippenger_HiGi_cache;
 
     // Useful scalar constants
-    static const key ZERO = { {0x00, 0x00, 0x00,0x00 , 0x00, 0x00, 0x00,0x00 , 0x00, 0x00, 0x00,0x00 , 0x00, 0x00, 0x00,0x00 , 0x00, 0x00, 0x00,0x00 , 0x00, 0x00, 0x00,0x00 , 0x00, 0x00, 0x00,0x00 , 0x00, 0x00, 0x00,0x00  } }; // 0
-    static const key ONE = { {0x01, 0x00, 0x00,0x00 , 0x00, 0x00, 0x00,0x00 , 0x00, 0x00, 0x00,0x00 , 0x00, 0x00, 0x00,0x00 , 0x00, 0x00, 0x00,0x00 , 0x00, 0x00, 0x00,0x00 , 0x00, 0x00, 0x00,0x00 , 0x00, 0x00, 0x00,0x00  } }; // 1
-    static const key TWO = { {0x02, 0x00, 0x00,0x00 , 0x00, 0x00, 0x00,0x00 , 0x00, 0x00, 0x00,0x00 , 0x00, 0x00, 0x00,0x00 , 0x00, 0x00, 0x00,0x00 , 0x00, 0x00, 0x00,0x00 , 0x00, 0x00, 0x00,0x00 , 0x00, 0x00, 0x00,0x00  } }; // 2
-    static const key MINUS_ONE = { { 0xec, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58, 0xd6, 0x9c, 0xf7, 0xa2, 0xde, 0xf9, 0xde, 0x14, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10 } }; // -1
-    static const key MINUS_INV_EIGHT = { { 0x74, 0xa4, 0x19, 0x7a, 0xf0, 0x7d, 0x0b, 0xf7, 0x05, 0xc2, 0xda, 0x25, 0x2b, 0x5c, 0x0b, 0x0d, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0a } }; // -(8**(-1))
+    static const constexpr discore::key ZERO = { {0x00, 0x00, 0x00,0x00 , 0x00, 0x00, 0x00,0x00 , 0x00, 0x00, 0x00,0x00 , 0x00, 0x00, 0x00,0x00 , 0x00, 0x00, 0x00,0x00 , 0x00, 0x00, 0x00,0x00 , 0x00, 0x00, 0x00,0x00 , 0x00, 0x00, 0x00,0x00  } }; // 0
+    static const constexpr discore::key ONE = { {0x01, 0x00, 0x00,0x00 , 0x00, 0x00, 0x00,0x00 , 0x00, 0x00, 0x00,0x00 , 0x00, 0x00, 0x00,0x00 , 0x00, 0x00, 0x00,0x00 , 0x00, 0x00, 0x00,0x00 , 0x00, 0x00, 0x00,0x00 , 0x00, 0x00, 0x00,0x00  } }; // 1
+    static const constexpr discore::key TWO = { {0x02, 0x00, 0x00,0x00 , 0x00, 0x00, 0x00,0x00 , 0x00, 0x00, 0x00,0x00 , 0x00, 0x00, 0x00,0x00 , 0x00, 0x00, 0x00,0x00 , 0x00, 0x00, 0x00,0x00 , 0x00, 0x00, 0x00,0x00 , 0x00, 0x00, 0x00,0x00  } }; // 2
+    static const constexpr discore::key MINUS_ONE = { { 0xec, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58, 0xd6, 0x9c, 0xf7, 0xa2, 0xde, 0xf9, 0xde, 0x14, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10 } }; // -1
+    static const constexpr discore::key MINUS_INV_EIGHT = { { 0x74, 0xa4, 0x19, 0x7a, 0xf0, 0x7d, 0x0b, 0xf7, 0x05, 0xc2, 0xda, 0x25, 0x2b, 0x5c, 0x0b, 0x0d, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0a } }; // -(8**(-1))
     static key TWO_SIXTY_FOUR_MINUS_ONE; // 2**64 - 1
 
     // Initial transcript hash
@@ -67,7 +66,7 @@ namespace discore
     }
 
     // Use hashed values to produce indexed public generators
-    static key get_exponent(const key& base, size_t idx)
+    static ge_p3 get_exponent(const key& base, size_t idx)
     {
         static const std::string domain_separator("bulletproof_plus");
         std::string hashed = std::string((const char*)base.bytes, sizeof(base)) + domain_separator + tools::get_varint_data(idx);
@@ -78,7 +77,7 @@ namespace discore
         hash_to_p3(generator_p3, hashed_data);
         ge_p3_tobytes(generator.bytes, &generator_p3);
         CHECK_THROW_ERR(!(generator == identity()), "Exponent is point at infinity");
-        return generator;
+        return generator_p3;
     }
 
     // Construct public generators
@@ -95,10 +94,8 @@ namespace discore
         data.reserve(maxN * maxM * 2);
         for (size_t i = 0; i < maxN * maxM; ++i)
         {
-            Hi[i] = get_exponent(H, i * 2);
-            CHECK_THROW_ERR(ge_frombytes_vartime(&Hi_p3[i], Hi[i].bytes) == 0, "ge_frombytes_vartime failed");
-            Gi[i] = get_exponent(H, i * 2 + 1);
-            CHECK_THROW_ERR(ge_frombytes_vartime(&Gi_p3[i], Gi[i].bytes) == 0, "ge_frombytes_vartime failed");
+            Hi_p3[i] = get_exponent(H, i * 2);
+            Gi_p3[i] = get_exponent(H, i * 2 + 1);
 
             data.push_back({ zero(), Gi_p3[i] });
             data.push_back({ zero(), Hi_p3[i] });
@@ -116,7 +113,7 @@ namespace discore
         sc_sub(TWO_SIXTY_FOUR_MINUS_ONE.bytes, TWO_SIXTY_FOUR_MINUS_ONE.bytes, ONE.bytes);
 
         // Generate the initial Fiat-Shamir transcript hash, which is constant across all proofs
-        static const std::string domain_separator("bulletproof_plus_transcript");
+        const std::string domain_separator("bulletproof_plus_transcript");
         ge_p3 initial_transcript_p3;
         key hashed_data;
         hash_to_scalar(hashed_data, domain_separator.data(), domain_separator.size());
@@ -233,7 +230,7 @@ namespace discore
 
         key res = ONE;
         if (n == 1)
-            return res;
+            return x;
 
         n += 1;
         key x1 = copy(x);
@@ -285,16 +282,7 @@ namespace discore
     static key weighted_inner_product(const keyV& a, const tools::span<const key>& b, const key& y)
     {
         CHECK_THROW_ERR(a.size() == b.size(), "Incompatible sizes of a and b");
-        key res = zero();
-        key y_power = ONE;
-        key temp;
-        for (size_t i = 0; i < a.size(); ++i)
-        {
-            sc_mul(temp.bytes, a[i].bytes, b[i].bytes);
-            sc_mul(y_power.bytes, y_power.bytes, y.bytes);
-            sc_muladd(res.bytes, temp.bytes, y_power.bytes, res.bytes);
-        }
-        return res;
+        return weighted_inner_product(tools::to_span(a), b, y);
     }
 
     // Fold inner-product point vectors
@@ -796,7 +784,7 @@ namespace discore
         // We'll perform only a single batch inversion across all proofs in the batch,
         //  since batch inversion requires only one scalar inversion operation.
         std::vector<key> to_invert;
-        to_invert.reserve(11 * sizeof(proofs)); // maximal size, given the aggregation limit
+        to_invert.reserve(11 * proofs.size()); // maximal size, given the aggregation limit
 
         for (const BulletproofPlus* p : proofs)
         {
@@ -814,7 +802,8 @@ namespace discore
             max_length = std::max(max_length, proof.L.size());
             nV += proof.V.size();
 
-            bp_plus_proof_data_t pd;
+            proof_data.push_back({});
+            bp_plus_proof_data_t& pd = proof_data.back();
 
             // Reconstruct the challenges
             key transcript = copy(initial_transcript);
@@ -851,7 +840,6 @@ namespace discore
                 to_invert.push_back(pd.challenges[j]);
             to_invert.push_back(pd.y);
             inv_offset += rounds + 1;
-            proof_data.push_back(pd);
         }
         CHECK_ASSERT(max_length < 32, false, "At least one proof is too large");
         size_t maxMN = 1u << max_length;
@@ -864,7 +852,8 @@ namespace discore
         multiexp_data.reserve(nV + (2 * (max_logM + logN) + 3) * proofs.size() + 2 * maxMN);
         multiexp_data.resize(2 * maxMN);
 
-        const std::vector<key> inverses = invert(to_invert);
+        const std::vector<key> inverses = invert(std::move(to_invert));
+        to_invert.clear();
 
         // Weights and aggregates
         //

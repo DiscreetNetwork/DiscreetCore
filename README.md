@@ -1,2 +1,2 @@
-# DiscreetCore-Win
-Windows variant of DiscreetCore.
+# DiscreetCore
+The core cryptographic tools used by the Discreet Daemon.

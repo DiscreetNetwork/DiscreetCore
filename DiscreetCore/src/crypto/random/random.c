@@ -64,12 +64,26 @@ static void generate_system_randombytes(size_t n, void *res);
 #include <windows.h>
 #include <wincrypt.h>
 #include <stdio.h>
+#include <bcrypt.h>
 
 static void generate_system_randombytes(size_t n, void *res) {
     HCRYPTPROV prov;
-    CryptAcquireContext(&prov, NULL, NULL, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT | CRYPT_SILENT);
-    CryptGenRandom(prov, (DWORD)n, res);
-    CryptReleaseContext(prov, 0);
+#ifdef RDBG
+#define must_succeed(x) do if (!(x)) { fprintf(stderr, "Failed: " #x); _exit(1); } while (0)
+#else
+#define must_succeed(x) do if (!(x)) abort(); while (0)
+#endif
+#ifdef WINRNGLEGACY
+    must_succeed(CryptAcquireContext(&prov, NULL, NULL, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT | CRYPT_SILENT));
+    must_succeed(CryptGenRandom(prov, (DWORD)n, res));
+    must_succeed(CryptReleaseContext(prov, 0));
+#else
+    NTSTATUS crypt_status;
+    crypt_status = BCryptGenRandom(NULL, res, n, BCRYPT_USE_SYSTEM_PREFERRED_RNG);
+    if (!BCRYPT_SUCCESS(crypt_status)) {
+        must_succeed(false);
+    }
+#endif
 }
 
 #else 
@@ -111,6 +125,7 @@ static void generate_system_randombytes(size_t n, void *result) {
 #endif
 
 static union hash_state state;
+static size_t rnginit = 0;
 
 #if !defined(RDBG)
 static volatile int curstate = 0;
@@ -130,7 +145,9 @@ FINALIZER(deinit_random) {
 #define INIT_ROUNDS 32
 
 INITIALIZER(init_random) {
-    generate_system_randombytes(32, &state);
+    rnginit = 1;
+    generate_system_randombytes(sizeof(union hash_state), &state);
+    hash_permutation(&state);
     REGISTER_FINALIZER(deinit_random);
 #if !defined(RDBG)
     assert(curstate == 0);
@@ -139,6 +156,12 @@ INITIALIZER(init_random) {
 }
 
 void generate_randombytes(size_t n, void *res) {
+    if (!rnginit) { //failsafe to ensure rng is initialized
+        rnginit = 1;
+        init_random();
+    }
+    //generate_system_randombytes(n, res);
+    //return;
 #if !defined(RDBG)
     assert(curstate == 1);
     curstate = 2;

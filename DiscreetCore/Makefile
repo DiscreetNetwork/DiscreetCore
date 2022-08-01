@@ -1,5 +1,5 @@
-# this makefile is for compiling on windows. 
-# remember to set the BOOST_LIB and BOOST on your machine.
+# this makefile is for compiling locally for linux.
+# Please ensure you install boost to your home folder, or change BOOST and BOOST_LIB accordingly.
 
 CC=gcc
 DIR_BUILD=build

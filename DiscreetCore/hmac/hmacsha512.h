@@ -17,7 +17,7 @@ extern "C" {
 
 EXPORT size_t hmacsha512_bytes(void);
 
-#define hmacsha512_KEYBYTES 32U
+#define hmacsha512_KEYBYTES 64U
 
 EXPORT size_t hmacsha512_keybytes(void);
 

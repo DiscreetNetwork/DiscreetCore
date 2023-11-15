@@ -12,8 +12,10 @@
 #include <string.h>
 
 #include "sha/sha512.h"
+#include "keccak/keccak.h"
 #include "initializer.h"
 #include "random/random.h"
+#include "util.h"
 
 #ifdef RDBG
 #include <stdio.h>
@@ -33,6 +35,24 @@ static void print32(char * const msg, const unsigned char *buf)
 }
 #endif
 
+#pragma pack(push, 1)
+union hash_state {
+    uint8_t b[200];
+    uint64_t w[25];
+};
+#pragma pack(pop)
+
+void hash_permutation(union hash_state* state) {
+#if BYTE_ORDER == LITTLE_ENDIAN
+    keccakf((uint64_t*)state, 24);
+#else
+    uint64_t le_state[25];
+    memcpy_swap64le(le_state, state, 25);
+    keccakf(le_state, 24);
+    memcpy_swap64le(state, le_state, 25);
+#endif
+}
+
 static inline void *padd(void *p, size_t i) {
   return (char *) p + i;
 }
@@ -44,12 +64,26 @@ static void generate_system_randombytes(size_t n, void *res);
 #include <windows.h>
 #include <wincrypt.h>
 #include <stdio.h>
+#include <bcrypt.h>
 
 static void generate_system_randombytes(size_t n, void *res) {
     HCRYPTPROV prov;
-    CryptAcquireContext(&prov, NULL, NULL, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT | CRYPT_SILENT);
-    CryptGenRandom(prov, (DWORD)n, res);
-    CryptReleaseContext(prov, 0);
+#ifdef RDBG
+#define must_succeed(x) do if (!(x)) { fprintf(stderr, "Failed: " #x); _exit(1); } while (0)
+#else
+#define must_succeed(x) do if (!(x)) abort(); while (0)
+#endif
+#ifdef WINRNGLEGACY
+    must_succeed(CryptAcquireContext(&prov, NULL, NULL, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT | CRYPT_SILENT));
+    must_succeed(CryptGenRandom(prov, (DWORD)n, res));
+    must_succeed(CryptReleaseContext(prov, 0));
+#else
+    NTSTATUS crypt_status;
+    crypt_status = BCryptGenRandom(NULL, res, n, BCRYPT_USE_SYSTEM_PREFERRED_RNG);
+    if (!BCRYPT_SUCCESS(crypt_status)) {
+        must_succeed(false);
+    }
+#endif
 }
 
 #else 
@@ -90,10 +124,19 @@ static void generate_system_randombytes(size_t n, void *result) {
 
 #endif
 
-static volatile sha512_ctx state;
+static union hash_state state;
+static size_t rnginit = 0;
+
+#if !defined(RDBG)
+static volatile int curstate = 0;
+#endif
 
 FINALIZER(deinit_random) {
-  memset(&state, 0, sizeof(sha512_ctx));
+#if !defined(RDBG)
+    assert(curstate == 1);
+    curstate = 0;
+#endif
+  memset(&state, 0, sizeof(union hash_state));
 #ifdef RDBG
   printf("deinitialized random\n");
 #endif
@@ -102,37 +145,48 @@ FINALIZER(deinit_random) {
 #define INIT_ROUNDS 32
 
 INITIALIZER(init_random) {
-  unsigned char _tmp[SHA512_DIGEST_SIZE];
-  sha512_init(&state);
-  int i;
-  for (i = 0; i < INIT_ROUNDS; i++) {
-    generate_system_randombytes(64, (void *) &_tmp[0]);
-    sha512_update(&state, _tmp, SHA512_DIGEST_SIZE);
-  }
-  REGISTER_FINALIZER(deinit_random);
-#ifdef RDBG
-  printf("initialized random\n");
-  print32("tmp0:31", _tmp);
-  print32("tmp32:63", _tmp + 32);
+    rnginit = 1;
+    generate_system_randombytes(sizeof(union hash_state), &state);
+    hash_permutation(&state);
+    REGISTER_FINALIZER(deinit_random);
+#if !defined(RDBG)
+    assert(curstate == 0);
+    curstate = 1;
 #endif
 }
 
 void generate_randombytes(size_t n, void *res) {
-    unsigned volatile char _tmp[SHA512_DIGEST_SIZE];
-    memcpy(_tmp, &state.s[0], SHA512_DIGEST_SIZE);
-    sha512_update(&state, _tmp, SHA512_DIGEST_SIZE);
+    if (!rnginit) { //failsafe to ensure rng is initialized
+        rnginit = 1;
+        init_random();
+    }
+    //generate_system_randombytes(n, res);
+    //return;
+#if !defined(RDBG)
+    assert(curstate == 1);
+    curstate = 2;
+#endif
+    if (n == 0) {
+#if !defined(RDBG)
+        assert(curstate == 2);
+        curstate = 1;
+#endif
+        return;
+    }
     for (;;) {
-        memcpy(_tmp, &state.s[0], SHA512_DIGEST_SIZE);
-        sha512_update(&state, _tmp, SHA512_DIGEST_SIZE);
-        memcpy(_tmp, &state.s[0], SHA512_DIGEST_SIZE);
-        sha512_update(&state, _tmp, SHA512_DIGEST_SIZE);
-        if (n <= SHA512_DIGEST_SIZE) {
-            memcpy(res, &state.s[0], n);
+        hash_permutation(&state);
+        if (n <= KECCAK_BLOCKLEN) {
+            memcpy(res, &state, n);
+#if !defined(RDBG)
+            assert(curstate == 2);
+            curstate = 1;
+#endif
             return;
-        } else {
-            memcpy(res, &state.s[0], SHA512_DIGEST_SIZE);
-            res = (void*)((char*)res + SHA512_DIGEST_SIZE);
-            n -= SHA512_DIGEST_SIZE;
+        }
+        else {
+            memcpy(res, &state, KECCAK_BLOCKLEN);
+            res = padd(res, KECCAK_BLOCKLEN);
+            n -= KECCAK_BLOCKLEN;
         }
     }
 }

@@ -17,7 +17,11 @@ void ThrowException(const char* s_Messg)
 {
     ms_GlobExcpLen = strlen(s_Messg);
     memcpy(ms_GlobExcp, s_Messg, ms_GlobExcpLen);
+#if defined(_MSC_VER)
     throw InternalException(s_Messg);
+#else
+    throw std::exception();
+#endif
 }
 
 
